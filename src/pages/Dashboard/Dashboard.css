@@ -1,558 +1,455 @@
 .dashboard-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
+  padding: 38px 24px 72px;
   background: #f4f7f1;
   color: #18251b;
-  padding: 48px 24px 80px;
 }
 
 .dashboard-container {
-  width: min(1180px, 100%);
+  width: min(1120px, 100%);
   margin: 0 auto;
 }
 
-/* =========================================
-   HEADER
-========================================= */
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  margin-bottom: 40px;
+.dashboard-loading {
+  padding: 48px 0;
+  color: #5f715f;
+  text-align: center;
 }
 
-.dashboard-eyebrow {
+.dashboard-header {
+  margin-bottom: 28px;
+}
+
+.dashboard-eyebrow,
+.section-label {
   margin: 0 0 8px;
   color: #39724b;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: clamp(34px, 5vw, 56px);
-  line-height: 1;
-  letter-spacing: -0.04em;
+  color: #183b25;
+  font-size: clamp(28px, 4vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
 }
 
-.dashboard-header p:not(.dashboard-eyebrow) {
-  margin: 14px 0 0;
-  color: #647064;
-  font-size: 16px;
-}
-
-.logout-button {
-  padding: 11px 18px;
-  border: 1px solid #cad7c8;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #304034;
-  font: inherit;
+.dashboard-header p:last-child {
+  margin: 10px 0 0;
+  color: #687568;
   font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
 }
-
-.logout-button:hover {
-  background: #edf3eb;
-}
-
-/* =========================================
-   ERROR
-========================================= */
 
 .dashboard-error {
-  margin-bottom: 24px;
-  padding: 14px 18px;
-  border: 1px solid #e2bcbc;
-  border-radius: 14px;
-  background: #fff0f0;
-  color: #9a3131;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid #e3b9b9;
+  border-radius: 12px;
+  background: #fff5f5;
+  color: #8d3b3b;
+  font-size: 13px;
 }
-
-/* =========================================
-   STATS
-========================================= */
 
 .dashboard-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 48px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 38px;
 }
 
 .stat-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 24px;
-  border: 1px solid #dce5d9;
-  border-radius: 20px;
+  justify-content: space-between;
+  min-height: 110px;
+  padding: 16px;
+  border: 1px solid #dbe5d8;
+  border-radius: 16px;
   background: #ffffff;
-  box-shadow: 0 8px 30px rgba(34, 63, 40, 0.06);
+  box-shadow: 0 6px 20px rgba(30, 62, 39, 0.045);
 }
 
-.stat-card h3 {
-  margin: 0 0 10px;
-  color: #718071;
-  font-size: 14px;
-  font-weight: 600;
+.stat-card-copy {
+  min-width: 0;
+}
+
+.stat-card-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #6f7a70;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .stat-card strong {
-  color: #245b35;
-  font-size: 34px;
+  display: block;
+  color: #1c4a2e;
+  font-size: 25px;
   line-height: 1;
+  letter-spacing: -0.035em;
 }
 
-.stat-card > span {
-  font-size: 30px;
+.stat-card small {
+  display: block;
+  margin-top: 7px;
+  color: #7d897d;
+  font-size: 11px;
 }
 
-/* =========================================
-   SECTION HEADINGS
-========================================= */
+.stat-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  background: #edf5ea;
+  color: #2f6a42;
+  font-size: 16px;
+  font-weight: 800;
+}
 
-.section-heading {
+.submission-section {
+  padding: 24px;
+  border: 1px solid #e0e8de;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.submission-section-heading {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  gap: 20px;
+  justify-content: space-between;
+  gap: 18px;
   margin-bottom: 20px;
 }
 
-.section-label {
-  margin: 0 0 7px;
-  color: #39724b;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.section-heading h2 {
+.submission-section-heading h2 {
   margin: 0;
-  font-size: 30px;
-  letter-spacing: -0.03em;
-}
-
-/* =========================================
-   WEEKLY CHALLENGE
-========================================= */
-
-.challenge-section {
-  margin-bottom: 56px;
-}
-
-.challenge-card {
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 24px;
-  padding: 30px;
-  border: 1px solid #dce5d9;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 8px 30px rgba(34, 63, 40, 0.06);
-}
-
-.challenge-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 88px;
-  height: 88px;
-  border-radius: 22px;
-  background: #e8f1e5;
-  font-size: 42px;
-}
-
-.challenge-week {
-  margin: 0 0 7px;
-  color: #39724b;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.challenge-content h2 {
-  margin: 0;
-  font-size: 30px;
-  letter-spacing: -0.03em;
-}
-
-.challenge-content > p:not(.challenge-week) {
-  max-width: 700px;
-  margin: 12px 0 0;
-  color: #647064;
-  line-height: 1.6;
-}
-
-.challenge-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 20px 0;
-}
-
-.challenge-meta span {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #f0f5ed;
-  color: #456149;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.primary-button {
-  display: inline-block;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: #285f38;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.primary-button:hover {
-  background: #204e2e;
-}
-
-.empty-challenge {
-  padding: 60px 30px;
-  border: 1px dashed #c8d6c5;
-  border-radius: 24px;
-  background: #ffffff;
-  text-align: center;
-}
-
-.empty-challenge > div {
-  font-size: 44px;
-  margin-bottom: 12px;
-}
-
-.empty-challenge h3 {
-  margin: 0;
+  color: #183b25;
   font-size: 22px;
+  letter-spacing: -0.025em;
 }
 
-.empty-challenge p {
-  margin: 10px 0 0;
-  color: #718071;
-}
-
-/* =========================================
-   SUBMISSION STATUS
-========================================= */
-
-.submission-status-section {
-  margin-bottom: 56px;
-}
-
-.submission-summary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.submission-summary span {
-  padding: 7px 11px;
+.pending-indicator {
+  padding: 7px 10px;
   border-radius: 999px;
+  background: #fff4d7;
+  color: #8b6518;
   font-size: 11px;
   font-weight: 800;
 }
 
-.summary-pending {
-  background: #fff3d5;
-  color: #8a6317;
+.filter-tabs {
+  display: inline-flex;
+  gap: 5px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid #dce5d9;
+  border-radius: 12px;
+  background: #f4f7f1;
 }
 
-.summary-approved {
-  background: #e1f2e4;
-  color: #28703a;
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #647265;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
-.summary-rejected {
-  background: #fbe4e4;
-  color: #9b3333;
+.filter-tab span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e3eae1;
+  color: #596a59;
+  font-size: 10px;
+}
+
+.filter-tab.active {
+  background: #28633e;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(38, 99, 62, 0.18);
+}
+
+.filter-tab.active span {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .submission-list {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
-.submission-status-card {
-  padding: 24px;
-  border: 1px solid #dce5d9;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 8px 30px rgba(34, 63, 40, 0.05);
-}
-
-.submission-status-card.status-pending {
-  border-left: 4px solid #d6a83c;
-}
-
-.submission-status-card.status-approved {
-  border-left: 4px solid #4d9660;
-}
-
-.submission-status-card.status-rejected {
-  border-left: 4px solid #bd5555;
-}
-
-.submission-status-top {
+.submission-card {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid #dce5d9;
+  border-left: 3px solid #4e8e5c;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(30, 62, 39, 0.035);
 }
 
-.submission-date {
-  margin: 0 0 6px;
-  color: #7b877b;
+.submission-card.status-rejected {
+  border-left-color: #bd6262;
+}
+
+.submission-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.submission-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.submission-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.submission-status.status-approved {
+  color: #2f7250;
+}
+
+.submission-status.status-rejected {
+  color: #9b4545;
+}
+
+.submission-card-topline time {
+  color: #7e8a7e;
+  font-size: 11px;
+}
+
+.submission-card h3 {
+  margin: 0;
+  color: #1c3f28;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.approved-summary,
+.rejected-summary {
+  margin-top: 10px;
+}
+
+.approved-reward {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #edf6ed;
+  color: #28603c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.approved-summary p,
+.rejected-summary p {
+  margin: 6px 0 0;
+  color: #687568;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.feedback-label {
+  margin-bottom: 4px;
+  color: #9a4b4b;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.resubmit-button {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: #8f4141;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.proof-thumbnail {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #d5e0d2;
+  border-radius: 12px;
+  background: #edf3eb;
+  cursor: pointer;
+}
+
+.proof-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.proof-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  min-height: 84px;
+  border-radius: 12px;
+  background: #edf3eb;
+  color: #708071;
+  font-size: 10px;
+}
+
+.submission-empty {
+  padding: 34px 18px;
+  border: 1px dashed #cbd8c8;
+  border-radius: 14px;
+  background: #fbfcfa;
+  text-align: center;
+}
+
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: #eaf3e7;
+  color: #34744b;
+  font-weight: 800;
+}
+
+.submission-empty h3 {
+  margin: 0;
+  color: #31513a;
+  font-size: 15px;
+}
+
+.submission-empty p {
+  margin: 6px 0 0;
+  color: #768476;
   font-size: 12px;
 }
 
-.submission-status-top h3 {
-  margin: 0;
-  font-size: 21px;
-  letter-spacing: -0.02em;
-}
-
-.submission-status-badge {
-  flex-shrink: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.status-badge-pending {
-  background: #fff3d5;
-  color: #8a6317;
-}
-
-.status-badge-approved {
-  background: #e1f2e4;
-  color: #28703a;
-}
-
-.status-badge-rejected {
-  background: #fbe4e4;
-  color: #9b3333;
-}
-
-/* =========================================
-   STATUS MESSAGES
-========================================= */
-
-.submission-message {
-  margin-top: 20px;
-  padding: 16px 18px;
-  border-radius: 14px;
-}
-
-.submission-message strong {
-  display: block;
-}
-
-.submission-message p {
-  margin: 7px 0 0;
-  line-height: 1.6;
-}
-
-.pending-message {
-  background: #fffaf0;
-  color: #765d26;
-}
-
-.approved-message {
-  background: #f0f8f1;
-  color: #2f6339;
-}
-
-.rejected-message {
-  background: #fff3f3;
-  color: #7d3636;
-}
-
-/* =========================================
-   REJECTION REASON
-========================================= */
-
-.rejection-reason {
-  margin-top: 14px;
-  padding: 14px;
-  border-left: 3px solid #bd5555;
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.rejection-reason span {
-  display: block;
-  margin-bottom: 6px;
-  color: #9b4a4a;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-}
-
-.rejection-reason p {
-  margin: 0;
-  color: #543737;
-}
-
-/* =========================================
-   RESUBMIT
-========================================= */
-
-.resubmit-button {
-  display: inline-block;
-  margin-top: 16px;
-  padding: 10px 15px;
-  border-radius: 10px;
-  background: #8e3f3f;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.resubmit-button:hover {
-  background: #773333;
-}
-
-/* =========================================
-   IMPACT
-========================================= */
-
-.impact-section {
-  margin-bottom: 30px;
-}
-
-.dashboard-card {
-  padding: 30px;
-  border: 1px solid #dce5d9;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 8px 30px rgba(34, 63, 40, 0.06);
-}
-
-.dashboard-card h2 {
-  margin: 0;
-  font-size: 30px;
-  letter-spacing: -0.03em;
-}
-
-.impact-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.impact-grid > div {
-  padding: 20px;
-  border-radius: 16px;
-  background: #f5f8f3;
-}
-
-.impact-grid span {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 28px;
-}
-
-.impact-grid strong {
-  display: block;
-  color: #285f38;
-  font-size: 30px;
-}
-
-.impact-grid small {
-  display: block;
-  margin-top: 5px;
-  color: #718071;
-  font-size: 13px;
-}
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .dashboard-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .challenge-card {
-    grid-template-columns: 1fr;
-  }
-
-  .challenge-icon {
-    width: 72px;
-    height: 72px;
-    font-size: 34px;
-  }
-
-  .impact-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 600px) {
   .dashboard-page {
-    padding: 30px 16px 60px;
+    padding: 28px 16px 56px;
   }
 
-  .dashboard-header {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .stat-card {
+    min-height: 96px;
+    padding: 13px;
+  }
+
+  .stat-card strong {
+    font-size: 22px;
+  }
+
+  .stat-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .submission-section {
+    padding: 18px;
+  }
+
+  .submission-card {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .proof-thumbnail,
+  .proof-loading {
+    width: 68px;
+    height: 68px;
+  }
+
+  .submission-card-topline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    min-height: 88px;
+  }
+
+  .submission-section-heading {
+    align-items: flex-start;
     flex-direction: column;
   }
 
-  .dashboard-header h1 {
-    font-size: 38px;
-  }
-
-  .logout-button {
+  .filter-tabs {
     width: 100%;
   }
 
-  .challenge-card {
-    padding: 22px;
+  .filter-tab {
+    flex: 1;
+    justify-content: center;
   }
 
-  .challenge-content h2 {
-    font-size: 25px;
-  }
-
-  .section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .submission-summary {
-    justify-content: flex-start;
-  }
-
-  .submission-status-card {
-    padding: 20px;
-  }
-
-  .submission-status-top {
+  .submission-card {
     flex-direction: column;
   }
 
-  .submission-status-badge {
-    align-self: flex-start;
-  }
-
-  .dashboard-card {
-    padding: 22px;
+  .proof-thumbnail,
+  .proof-loading {
+    width: 100%;
+    height: 140px;
   }
 }

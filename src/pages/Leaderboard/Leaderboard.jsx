@@ -25,6 +25,7 @@ export default function Leaderboard() {
           trees_planted,
           waste_cleaned
         `)
+        .eq("role", "user")
         .order("eco_coins", {
           ascending: false,
         })

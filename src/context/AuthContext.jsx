@@ -11,28 +11,59 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  async function loadSession(sessionUser) {
+    setUser(sessionUser ?? null);
+    setProfile(null);
+
+    if (!sessionUser) {
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", sessionUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile loading error:", error);
+    }
+
+    setProfile(data ?? null);
+    setLoading(false);
+  }
 
   useEffect(() => {
     let mounted = true;
 
     async function loadUser() {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      let sessionUser = null;
 
-      if (!mounted) return;
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
-      if (error) {
-        console.error(
-          "Auth user error:",
-          error
-        );
+        if (error && !error.message.includes("Auth session missing")) {
+          console.error("Auth user error:", error);
+        }
+
+        sessionUser = user ?? null;
+      } catch (error) {
+        const message = error?.message || "";
+
+        if (!message.includes("Auth session missing")) {
+          console.error("Auth user error:", error);
+        }
       }
 
-      setUser(user ?? null);
-      setLoading(false);
+      if (!mounted) return;
+      await loadSession(sessionUser);
     }
 
     loadUser();
@@ -41,14 +72,8 @@ export function AuthProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-
         if (!mounted) return;
-
-        setUser(
-          session?.user ?? null
-        );
-
-        setLoading(false);
+        loadSession(session?.user ?? null);
       }
     );
 
@@ -59,14 +84,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signOut() {
-    const { error } =
-      await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error(
-        "Logout error:",
-        error
-      );
+      console.error("Logout error:", error);
     }
   }
 
@@ -74,6 +95,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        profile,
         loading,
         signOut,
       }}

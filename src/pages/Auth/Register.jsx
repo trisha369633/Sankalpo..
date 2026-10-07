@@ -56,7 +56,7 @@ export default function Register() {
     }
 
     if (data.session) {
-      navigate("/dashboard");
+      navigate("/home");
     } else {
       navigate("/login");
     }

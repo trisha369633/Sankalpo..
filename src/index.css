@@ -117,16 +117,29 @@ a {
 }
 
 
-/* Login text */
+/* Login actions */
 
-.landing-content > p {
+.landing-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
   margin-top: 20px;
-  color: #6a716c;
 }
 
-.landing-content > p a {
+.secondary-link {
   color: #245c38;
   font-weight: 700;
+}
+
+.route-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #4d6854;
+  background: #f5f6f1;
 }
 
 

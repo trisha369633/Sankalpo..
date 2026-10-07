@@ -1,10 +1,13 @@
-/* Leaderboard.css - Natural Green Premium Theme */
+/* =========================================================
+   LEADERBOARD
+   Natural Green Premium Theme
+   ========================================================= */
 
 .leaderboard-page {
   min-height: 100vh;
   background-color: #f4f7f5;
   padding: 40px 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   color: #1b3b2b;
 }
 
@@ -13,7 +16,10 @@
   margin: 0 auto;
 }
 
-/* Header Styles */
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .leaderboard-header {
   display: flex;
   justify-content: space-between;
@@ -23,6 +29,7 @@
   padding: 32px;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(27, 59, 43, 0.05);
+  border: 1px solid #e7eeea;
 }
 
 .leaderboard-eyebrow {
@@ -38,13 +45,19 @@
   font-size: 28px;
   font-weight: 800;
   color: #1b3b2b;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
 }
 
 .leaderboard-header p {
   color: #52796f;
   font-size: 14px;
+  margin: 0;
+  line-height: 1.6;
 }
+
+/* =========================================================
+   BACK TO DASHBOARD
+   ========================================================= */
 
 .back-dashboard-button {
   background-color: #e8f5e9;
@@ -55,14 +68,19 @@
   font-size: 14px;
   text-decoration: none;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .back-dashboard-button:hover {
   background-color: #d8f3dc;
   color: #1b4332;
+  transform: translateY(-1px);
 }
 
-/* States: Error, Loading, Empty */
+/* =========================================================
+   ERROR
+   ========================================================= */
+
 .leaderboard-error {
   background-color: #ffebee;
   color: #c62828;
@@ -71,15 +89,27 @@
   margin-bottom: 24px;
   text-align: center;
   font-weight: 500;
+  border: 1px solid #ffcdd2;
 }
 
-.leaderboard-loading, .leaderboard-empty {
+/* =========================================================
+   LOADING / EMPTY
+   ========================================================= */
+
+.leaderboard-loading,
+.leaderboard-empty {
   text-align: center;
   padding: 60px 20px;
   background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(27, 59, 43, 0.05);
   color: #52796f;
+  border: 1px solid #e7eeea;
+}
+
+.leaderboard-loading p {
+  margin: 0;
+  font-size: 15px;
 }
 
 .leaderboard-empty div {
@@ -89,13 +119,23 @@
 
 .leaderboard-empty h2 {
   color: #1b3b2b;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
+  font-size: 22px;
 }
 
-/* Top 3 Champions Section */
+.leaderboard-empty p {
+  margin: 0;
+  color: #52796f;
+  font-size: 14px;
+}
+
+/* =========================================================
+   TOP 3 CHAMPIONS
+   ========================================================= */
+
 .top-champions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-bottom: 40px;
 }
@@ -108,22 +148,48 @@
   position: relative;
   box-shadow: 0 6px 24px rgba(27, 59, 43, 0.06);
   border: 1px solid #e2ece9;
-  transition: transform 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .champion-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(27, 59, 43, 0.1);
 }
 
+/* First place */
+
 .champion-1 {
-  background: linear-gradient(135deg, #ffffff 0%, #f1f8f5 100%);
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f1f8f5 100%
+  );
+
   border-color: #b7e4c7;
 }
 
+/* Second place */
+
+.champion-2 {
+  background: #ffffff;
+}
+
+/* Third place */
+
+.champion-3 {
+  background: #ffffff;
+}
+
+/* Medal */
+
 .champion-rank {
-  font-size: 24px;
+  font-size: 26px;
   margin-bottom: 12px;
 }
+
+/* Avatar */
 
 .champion-avatar {
   width: 64px;
@@ -136,7 +202,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 16px;
   box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2);
 }
 
@@ -144,16 +210,17 @@
   font-size: 18px;
   font-weight: 700;
   color: #1b3b2b;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
 }
 
 .champion-card strong {
   font-size: 22px;
   color: #2d6a4f;
   display: block;
+  margin-bottom: 2px;
 }
 
-.champion-card span {
+.champion-card > span {
   font-size: 13px;
   color: #52796f;
 }
@@ -164,17 +231,22 @@
   border-top: 1px solid #edf2ef;
   display: flex;
   justify-content: space-around;
+  gap: 10px;
   font-size: 13px;
   font-weight: 500;
   color: #40916c;
 }
 
-/* Full Leaderboard List */
+/* =========================================================
+   FULL LEADERBOARD
+   ========================================================= */
+
 .leaderboard-list-section {
   background: #ffffff;
   border-radius: 20px;
   padding: 32px;
   box-shadow: 0 4px 20px rgba(27, 59, 43, 0.05);
+  border: 1px solid #e7eeea;
 }
 
 .leaderboard-section-heading {
@@ -190,16 +262,17 @@
   letter-spacing: 1px;
   color: #52796f;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
 }
 
 .leaderboard-section-heading h2 {
   font-size: 20px;
   font-weight: 700;
   color: #1b3b2b;
+  margin: 0;
 }
 
-.leaderboard-section-heading span {
+.leaderboard-section-heading > span {
   font-size: 13px;
   font-weight: 600;
   color: #52796f;
@@ -207,6 +280,10 @@
   padding: 6px 12px;
   border-radius: 20px;
 }
+
+/* =========================================================
+   LEADERBOARD LIST
+   ========================================================= */
 
 .leaderboard-list {
   display: flex;
@@ -221,24 +298,54 @@
   padding: 16px 20px;
   border-radius: 14px;
   border: 1px solid #edf2ef;
-  transition: background-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .leaderboard-row:hover {
   background-color: #f1f8f5;
+  border-color: #d8e9df;
+  transform: translateX(2px);
 }
+
+/* =========================================================
+   RANK NUMBER
+   ========================================================= */
 
 .rank-number {
   font-size: 16px;
   font-weight: 700;
   color: #52796f;
   width: 32px;
+  min-width: 32px;
   text-align: center;
 }
+
+/* Highlight top 3 rows */
+
+.leaderboard-row:nth-child(1) .rank-number {
+  color: #2d6a4f;
+  font-size: 18px;
+}
+
+.leaderboard-row:nth-child(2) .rank-number {
+  color: #52796f;
+}
+
+.leaderboard-row:nth-child(3) .rank-number {
+  color: #52796f;
+}
+
+/* =========================================================
+   USER AVATAR
+   ========================================================= */
 
 .leaderboard-avatar {
   width: 42px;
   height: 42px;
+  min-width: 42px;
   background-color: #d8f3dc;
   color: #1b4332;
   font-weight: 700;
@@ -250,21 +357,34 @@
   margin-right: 16px;
 }
 
+/* =========================================================
+   USER INFO
+   ========================================================= */
+
 .leaderboard-user {
   flex: 1;
+  min-width: 0;
 }
 
 .leaderboard-user h3 {
   font-size: 15px;
   font-weight: 600;
   color: #1b3b2b;
-  margin-bottom: 2px;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .leaderboard-user p {
   font-size: 12px;
   color: #52796f;
+  margin: 0;
 }
+
+/* =========================================================
+   IMPACT
+   ========================================================= */
 
 .leaderboard-impact {
   display: flex;
@@ -273,10 +393,22 @@
   font-size: 13px;
   font-weight: 500;
   color: #40916c;
+  white-space: nowrap;
 }
+
+.leaderboard-impact span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* =========================================================
+   ECO COINS
+   ========================================================= */
 
 .leaderboard-coins {
   text-align: right;
+  min-width: 90px;
 }
 
 .leaderboard-coins strong {
@@ -290,18 +422,135 @@
   color: #879a93;
 }
 
-/* Responsive Design */
+/* =========================================================
+   TABLET
+   ========================================================= */
+
 @media (max-width: 768px) {
+  .leaderboard-page {
+    padding: 24px 16px;
+  }
+
   .leaderboard-header {
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
+    padding: 24px;
   }
-  
+
+  .leaderboard-header h1 {
+    font-size: 24px;
+  }
+
+  .back-dashboard-button {
+    align-self: flex-start;
+  }
+
+  .top-champions {
+    grid-template-columns: 1fr;
+  }
+
+  .champion-card {
+    padding: 22px;
+  }
+
+  .leaderboard-list-section {
+    padding: 24px 18px;
+  }
+
+  .leaderboard-section-heading {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+
   .leaderboard-impact {
     display: none;
   }
-  
+
   .leaderboard-row {
-    padding: 12px 16px;
+    padding: 12px 14px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .leaderboard-page {
+    padding: 16px 12px;
+  }
+
+  .leaderboard-header {
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 22px;
+  }
+
+  .leaderboard-header p {
+    font-size: 13px;
+  }
+
+  .back-dashboard-button {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .champion-card {
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .leaderboard-list-section {
+    padding: 20px 12px;
+    border-radius: 16px;
+  }
+
+  .leaderboard-row {
+    padding: 12px 10px;
+    border-radius: 12px;
+  }
+
+  .rank-number {
+    width: 24px;
+    min-width: 24px;
+    font-size: 14px;
+  }
+
+  .leaderboard-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    font-size: 14px;
+    margin-right: 10px;
+  }
+
+  .leaderboard-user h3 {
+    font-size: 14px;
+  }
+
+  .leaderboard-user p {
+    font-size: 11px;
+  }
+
+  .leaderboard-coins {
+    min-width: 65px;
+  }
+
+  .leaderboard-coins strong {
+    font-size: 15px;
+  }
+
+  .leaderboard-coins span {
+    font-size: 10px;
+  }
+
+  .champion-actions {
+    font-size: 12px;
   }
 }

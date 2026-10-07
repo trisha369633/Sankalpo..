@@ -13,18 +13,18 @@ export default function Landing() {
         </h1>
 
         <p className="hero-text">
-          Take one meaningful environmental challenge every week,
+          Make one meaningful environmental action every week,
           earn Eco-Coins, and help create measurable change in your community.
         </p>
 
-        <Link to="/register" className="primary-button">
-          Start Your Journey →
-        </Link>
-
-        <p style={{ marginTop: "20px" }}>
-          Already participating?{" "}
-          <Link to="/login">Login</Link>
-        </p>
+        <div className="landing-actions">
+          <Link to="/register" className="primary-button">
+            Get Started →
+          </Link>
+          <Link to="/login" className="secondary-link">
+            Already a member? Login
+          </Link>
+        </div>
       </div>
     </main>
   );

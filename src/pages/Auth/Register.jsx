@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { LeafIcon } from "../../components/SankalpoIcons";
 import { supabase } from "../../lib/supabase";
 
 export default function Register() {
@@ -65,7 +66,10 @@ export default function Register() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">🌱 SANKALPO</div>
+        <div className="auth-logo">
+          <LeafIcon size={26} strokeWidth={1.7} />
+          SANKALPO
+        </div>
 
         <h1>Create your account</h1>
 

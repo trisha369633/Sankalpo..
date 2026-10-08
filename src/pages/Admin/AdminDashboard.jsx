@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 
+import {
+  CalendarIcon,
+  CoinIcon,
+  LeafIcon,
+  LocationIcon,
+  RejectedIcon,
+  SuccessIcon,
+} from "../../components/SankalpoIcons";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
@@ -11,6 +19,19 @@ export default function AdminDashboard() {
 
   const [profile, setProfile] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [challenges, setChallenges] = useState([]);
+  const [selectedChallengeId, setSelectedChallengeId] = useState("");
+  const [challengeDraft, setChallengeDraft] = useState({
+    title: "",
+    description: "",
+    reward: 0,
+    start_date: "",
+    end_date: "",
+    instructions: "",
+    proof_requirements: "",
+    important_notes: "",
+    status: "published",
+  });
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -95,7 +116,10 @@ export default function AdminDashboard() {
             ),
             challenges (
               title,
-              reward
+              reward,
+              instructions,
+              proof_requirements,
+              important_notes
             )
           `)
           .order("created_at", {
@@ -112,6 +136,17 @@ export default function AdminDashboard() {
         );
 
         setSubmissions(submissionData || []);
+
+        const { data: challengeData, error: challengeError } = await supabase
+          .from("challenges")
+          .select("*")
+          .order("start_date", { ascending: false });
+
+        if (challengeError) {
+          throw challengeError;
+        }
+
+        setChallenges(challengeData || []);
       } catch (err) {
         console.error(
           "ADMIN DASHBOARD ERROR:",
@@ -129,6 +164,104 @@ export default function AdminDashboard() {
 
     loadAdminData();
   }, [user, authLoading]);
+
+  function selectChallenge(challengeId) {
+    setSelectedChallengeId(challengeId);
+
+    if (!challengeId) {
+      setChallengeDraft({
+        title: "",
+        description: "",
+        reward: 0,
+        start_date: "",
+        end_date: "",
+        instructions: "",
+        proof_requirements: "",
+        important_notes: "",
+        status: "published",
+      });
+      return;
+    }
+
+    const challenge = challenges.find((item) => item.id === challengeId);
+    if (!challenge) return;
+
+    setChallengeDraft({
+      title: challenge.title || "",
+      description: challenge.description || "",
+      reward: challenge.reward ?? 0,
+      start_date: challenge.start_date || "",
+      end_date: challenge.end_date || "",
+      instructions: challenge.instructions || "",
+      proof_requirements: challenge.proof_requirements || "",
+      important_notes: challenge.important_notes || "",
+      status: challenge.status || "published",
+    });
+  }
+
+  function updateChallengeDraft(field, value) {
+    setChallengeDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveChallenge(event) {
+    event.preventDefault();
+    setError("");
+
+    if (!challengeDraft.title.trim() || !challengeDraft.description.trim()) {
+      setError("Title and description are required.");
+      return;
+    }
+
+    const payload = {
+      title: challengeDraft.title.trim(),
+      description: challengeDraft.description.trim(),
+      reward: Number(challengeDraft.reward) || 0,
+      start_date: challengeDraft.start_date,
+      end_date: challengeDraft.end_date,
+      instructions: challengeDraft.instructions.trim(),
+      proof_requirements: challengeDraft.proof_requirements.trim(),
+      important_notes: challengeDraft.important_notes.trim(),
+      status: challengeDraft.status,
+    };
+
+    try {
+      const result = selectedChallengeId
+        ? await supabase
+            .from("challenges")
+            .update(payload)
+            .eq("id", selectedChallengeId)
+        : await supabase
+            .from("challenges")
+            .insert(payload)
+            .select()
+            .single();
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setChallenges((current) => {
+        if (selectedChallengeId) {
+          return current.map((challenge) =>
+            challenge.id === selectedChallengeId
+              ? { ...challenge, ...payload }
+              : challenge
+          );
+        }
+        return [
+          { id: result.data?.id || "new", ...payload },
+          ...current,
+        ];
+      });
+
+      if (!selectedChallengeId && result.data?.id) {
+        setSelectedChallengeId(result.data.id);
+      }
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to save the challenge.");
+    }
+  }
 
   // =========================================
   // UPDATE SUBMISSION STATUS
@@ -397,6 +530,128 @@ export default function AdminDashboard() {
 
         </section>
 
+        {/* CHALLENGE EDITOR */}
+
+        <section className="admin-section challenge-editor-section">
+          <div className="admin-section-heading">
+            <div>
+              <p className="admin-label">CHALLENGE CONTENT</p>
+              <h2>Create or edit challenge guidance</h2>
+            </div>
+          </div>
+
+          <form className="challenge-editor" onSubmit={saveChallenge}>
+            <label>
+              Challenge
+              <select
+                value={selectedChallengeId}
+                onChange={(event) => selectChallenge(event.target.value)}
+              >
+                <option value="">New challenge</option>
+                {challenges.map((challenge) => (
+                  <option key={challenge.id} value={challenge.id}>
+                    {challenge.title || "Untitled challenge"}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="challenge-editor-grid">
+              <label>
+                Title
+                <input
+                  value={challengeDraft.title}
+                  onChange={(event) => updateChallengeDraft("title", event.target.value)}
+                  placeholder="Challenge title"
+                  required
+                />
+              </label>
+              <label>
+                Reward
+                <input
+                  type="number"
+                  min="0"
+                  value={challengeDraft.reward}
+                  onChange={(event) => updateChallengeDraft("reward", event.target.value)}
+                />
+              </label>
+              <label>
+                Start date
+                <input
+                  type="datetime-local"
+                  value={challengeDraft.start_date}
+                  onChange={(event) => updateChallengeDraft("start_date", event.target.value)}
+                />
+              </label>
+              <label>
+                End date
+                <input
+                  type="datetime-local"
+                  value={challengeDraft.end_date}
+                  onChange={(event) => updateChallengeDraft("end_date", event.target.value)}
+                />
+              </label>
+            </div>
+
+            <label>
+              Description
+              <textarea
+                value={challengeDraft.description}
+                onChange={(event) => updateChallengeDraft("description", event.target.value)}
+                rows="3"
+                required
+              />
+            </label>
+
+            <label>
+              Instructions
+              <textarea
+                value={challengeDraft.instructions}
+                onChange={(event) => updateChallengeDraft("instructions", event.target.value)}
+                rows="4"
+                placeholder="Exactly what the user should do."
+              />
+            </label>
+
+            <div className="challenge-editor-grid">
+              <label>
+                Proof requirements
+                <textarea
+                  value={challengeDraft.proof_requirements}
+                  onChange={(event) => updateChallengeDraft("proof_requirements", event.target.value)}
+                  rows="4"
+                  placeholder="What should be visible in the proof photo?"
+                />
+              </label>
+              <label>
+                Important notes
+                <textarea
+                  value={challengeDraft.important_notes}
+                  onChange={(event) => updateChallengeDraft("important_notes", event.target.value)}
+                  rows="4"
+                  placeholder="Avoid rejection reasons and important exceptions."
+                />
+              </label>
+            </div>
+
+            <div className="challenge-editor-actions">
+              <label>
+                Status
+                <select
+                  value={challengeDraft.status}
+                  onChange={(event) => updateChallengeDraft("status", event.target.value)}
+                >
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </label>
+              <button type="submit" className="save-challenge-button">
+                Save challenge
+              </button>
+            </div>
+          </form>
+        </section>
+
         {/* SUBMISSIONS */}
 
         <section className="admin-section">
@@ -418,7 +673,7 @@ export default function AdminDashboard() {
             <div className="admin-empty">
 
               <div className="admin-empty-icon">
-                🌱
+                <LeafIcon size={36} strokeWidth={1.6} />
               </div>
 
               <h3>
@@ -594,7 +849,8 @@ function SubmissionCard({
 
           <div>
             <span>
-              🪙 Reward
+              <CoinIcon size={17} strokeWidth={1.8} />
+              Reward
             </span>
 
             <strong>
@@ -606,7 +862,8 @@ function SubmissionCard({
 
           <div>
             <span>
-              📍 Location
+              <LocationIcon size={17} strokeWidth={1.8} />
+              Location
             </span>
 
             <strong>
@@ -625,7 +882,8 @@ function SubmissionCard({
 
           <div>
             <span>
-              📅 Submitted
+              <CalendarIcon size={17} strokeWidth={1.8} />
+              Submitted
             </span>
 
             <strong>
@@ -693,7 +951,10 @@ function SubmissionCard({
               {actionLoading ===
               submission.id
                 ? "Updating..."
-                : "✓ Approve"}
+                : <>
+                    <SuccessIcon size={17} strokeWidth={2} />
+                    Approve
+                  </>}
             </button>
 
             <button
@@ -711,7 +972,10 @@ function SubmissionCard({
               {actionLoading ===
               submission.id
                 ? "Updating..."
-                : "✕ Reject"}
+                : <>
+                    <RejectedIcon size={17} strokeWidth={2} />
+                    Reject
+                  </>}
             </button>
 
           </div>

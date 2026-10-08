@@ -11,7 +11,9 @@ import Challenges from "./pages/Challenges/Challenges";
 import Challenge from "./pages/Challenge/Challenge";
 import Leaderboard from "./pages/Leaderboard/Leaderboard";
 import Profile from "./pages/Profile/Profile";
+import Community from "./pages/Community/Community";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminCommunity from "./pages/Admin/AdminCommunity";
 
 function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -47,9 +49,11 @@ function App() {
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/challenge/:id" element={<Challenge />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/community" element={<Community />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminRoute />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="community" element={<AdminCommunity />} />
           </Route>
         </Route>
       </Route>

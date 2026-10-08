@@ -72,6 +72,7 @@
   font-size: 28px;
 }
 
+.profile-history-card,
 .profile-account-card {
   margin-top: 22px;
   padding: 28px;
@@ -80,10 +81,76 @@
   background: #fff;
 }
 
+.profile-history-card h2,
 .profile-account-card h2 {
   margin: 0;
   color: #18251b;
   font-size: 24px;
+}
+
+.profile-history-list {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-history-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 13px;
+  padding: 16px;
+  border-radius: 13px;
+  background: #f5f7f3;
+}
+
+.profile-history-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-history-list strong {
+  color: #243329;
+}
+
+.profile-history-list small {
+  color: #758077;
+}
+
+.profile-history-list p {
+  grid-column: 2;
+  margin: 0;
+  color: #59665b;
+  font-size: 13px;
+}
+
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.history-status.status-approved {
+  background: #e4f3e5;
+  color: #28643a;
+}
+
+.history-status.status-rejected {
+  background: #fae7e3;
+  color: #9a3f31;
+}
+
+.profile-history-empty {
+  margin: 20px 0 0;
+  color: #6c786e;
 }
 
 .profile-account-card dl {

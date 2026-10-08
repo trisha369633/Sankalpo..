@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
+import { LeafIcon, LogoutIcon } from "../SankalpoIcons";
 import { useAuth } from "../../context/AuthContext";
 import "./Header.css";
 
@@ -8,6 +9,7 @@ const navigation = [
   { label: "Home", to: "/home" },
   { label: "Dashboard", to: "/dashboard" },
   { label: "Challenges", to: "/challenges" },
+  { label: "Community", to: "/community" },
   { label: "Leaderboard", to: "/leaderboard" },
 ];
 
@@ -19,7 +21,10 @@ export default function Header() {
 
   const links = [
     ...navigation,
-    ...(isAdmin ? [{ label: "Admin", to: "/admin" }] : []),
+    ...(isAdmin ? [
+      { label: "Admin", to: "/admin" },
+      { label: "Moderation", to: "/admin/community" },
+    ] : []),
     { label: "Profile", to: "/profile" },
   ];
 
@@ -42,7 +47,7 @@ export default function Header() {
           aria-label="Sankalpo home"
         >
           <span className="brand-mark" aria-hidden="true">
-            🌱
+            <LeafIcon size={20} strokeWidth={1.9} />
           </span>
           <span>SANKALPO</span>
         </Link>
@@ -70,6 +75,7 @@ export default function Header() {
             type="button"
             onClick={handleLogout}
           >
+            <LogoutIcon size={16} strokeWidth={1.9} />
             Logout
           </button>
         </nav>

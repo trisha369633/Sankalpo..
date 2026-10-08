@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import {
+  CalendarIcon,
+  CameraIcon,
+  ChallengeIcon,
+  CoinIcon,
+  LeafIcon,
+  LocationIcon,
+  SuccessIcon,
+} from "../../components/SankalpoIcons";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import "./Challenge.css";
@@ -31,7 +40,12 @@ export default function Challenge() {
 
       const { data, error } = await supabase
         .from("challenges")
-        .select("*")
+        .select(`
+          *,
+          instructions,
+          proof_requirements,
+          important_notes
+        `)
         .eq("id", id)
         .single();
 
@@ -386,7 +400,7 @@ export default function Challenge() {
       <main className="challenge-page">
         <div className="challenge-container">
           <div className="challenge-not-found">
-            <span>🌿</span>
+            <LeafIcon size={34} strokeWidth={1.6} />
 
             <h1>Challenge not found</h1>
 
@@ -426,7 +440,7 @@ export default function Challenge() {
         <section className="challenge-hero">
 
           <div className="challenge-hero-icon">
-            🌱
+            <ChallengeIcon size={36} strokeWidth={1.6} />
           </div>
 
           <div className="challenge-hero-content">
@@ -446,7 +460,7 @@ export default function Challenge() {
             <div className="challenge-details">
 
               <div className="challenge-detail">
-                <span>🪙</span>
+                <CoinIcon size={20} strokeWidth={1.8} />
 
                 <div>
                   <small>REWARD</small>
@@ -458,7 +472,7 @@ export default function Challenge() {
               </div>
 
               <div className="challenge-detail">
-                <span>📅</span>
+                <CalendarIcon size={20} strokeWidth={1.8} />
 
                 <div>
                   <small>DEADLINE</small>
@@ -475,10 +489,34 @@ export default function Challenge() {
 
         </section>
 
+        <section className="challenge-guidance">
+          <div className="challenge-guidance-heading">
+            <p className="section-label">BEFORE YOU SUBMIT</p>
+            <h2>What you need to do</h2>
+          </div>
+          <div className="guidance-grid">
+            <article>
+              <span>01</span>
+              <h3>Instructions</h3>
+              <p>{challenge.instructions || "Follow the challenge action and complete it carefully."}</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Proof requirements</h3>
+              <p>{challenge.proof_requirements || "Upload a clear photo showing the completed action."}</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Important notes</h3>
+              <p>{challenge.important_notes || "Submissions without clear proof may be rejected."}</p>
+            </article>
+          </div>
+        </section>
+
         {/* Success message */}
         {message && (
           <div className="challenge-success">
-            <span>✓</span>
+            <SuccessIcon size={20} strokeWidth={2} />
 
             <p>
               {message}
@@ -590,7 +628,7 @@ export default function Challenge() {
                     {photo ? (
                       <div className="selected-file">
 
-                        <span>📷</span>
+                        <CameraIcon size={24} strokeWidth={1.7} />
 
                         <div>
                           <strong>
@@ -611,7 +649,7 @@ export default function Challenge() {
                     ) : (
                       <div className="upload-placeholder">
 
-                        <span>📸</span>
+                        <CameraIcon size={28} strokeWidth={1.7} />
 
                         <strong>
                           Choose a photo
@@ -660,17 +698,18 @@ export default function Challenge() {
                     onClick={getLocation}
                     disabled={locationLoading}
                   >
+                    <LocationIcon size={18} strokeWidth={1.9} />
                     {locationLoading
                       ? "Getting your location..."
                       : location
-                      ? "✓ Location captured"
-                      : "📍 Capture my location"}
+                      ? "Location captured"
+                      : "Capture my location"}
                   </button>
 
                   {location && (
                     <div className="location-info">
 
-                      <span>📍</span>
+                      <LocationIcon size={20} strokeWidth={1.8} />
 
                       <div>
 

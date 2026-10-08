@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import {
+  CoinIcon,
+  TrophyIcon,
+  TreeIcon,
+  WasteIcon,
+} from "../../components/SankalpoIcons";
 import { supabase } from "../../lib/supabase";
 
 import "./Leaderboard.css";
@@ -63,7 +69,8 @@ export default function Leaderboard() {
             </p>
 
             <h1>
-              Eco Champions 🏆
+              Eco Champions
+              <TrophyIcon size={24} strokeWidth={1.8} />
             </h1>
 
             <p>
@@ -92,7 +99,9 @@ export default function Leaderboard() {
           </div>
         ) : users.length === 0 ? (
           <div className="leaderboard-empty">
-            <div>🌱</div>
+            <div>
+              <TreeIcon size={38} strokeWidth={1.6} />
+            </div>
 
             <h2>
               No champions yet
@@ -115,9 +124,9 @@ export default function Leaderboard() {
                     className={`champion-card champion-${index + 1}`}
                   >
                     <div className="champion-rank">
-                      {index === 0 && "🥇"}
-                      {index === 1 && "🥈"}
-                      {index === 2 && "🥉"}
+                      {index === 0 && <TrophyIcon size={30} strokeWidth={1.8} />}
+                      {index === 1 && <TrophyIcon size={28} strokeWidth={1.8} />}
+                      {index === 2 && <TrophyIcon size={28} strokeWidth={1.8} />}
                     </div>
 
                     <div className="champion-avatar">
@@ -132,6 +141,7 @@ export default function Leaderboard() {
                     </h2>
 
                     <strong>
+                      <CoinIcon size={18} strokeWidth={1.8} />
                       {user.eco_coins ?? 0}
                     </strong>
 
@@ -141,12 +151,13 @@ export default function Leaderboard() {
 
                     <div className="champion-actions">
                       <span>
-                        🌱 {user.total_actions ?? 0}
-                        {" "}actions
+                        <TreeIcon size={15} strokeWidth={1.8} />
+                        {user.total_actions ?? 0} actions
                       </span>
 
                       <span>
-                        🌳 {user.trees_planted ?? 0}
+                        <TreeIcon size={15} strokeWidth={1.8} />
+                        {user.trees_planted ?? 0}
                       </span>
                     </div>
                   </div>
@@ -204,20 +215,19 @@ export default function Leaderboard() {
 
                       <div className="leaderboard-impact">
                         <span>
-                          🌳
-                          {" "}
+                          <TreeIcon size={16} strokeWidth={1.8} />
                           {user.trees_planted ?? 0}
                         </span>
 
                         <span>
-                          🗑️
-                          {" "}
+                          <WasteIcon size={16} strokeWidth={1.8} />
                           {user.waste_cleaned ?? 0}
                         </span>
                       </div>
 
                       <div className="leaderboard-coins">
                         <strong>
+                          <CoinIcon size={18} strokeWidth={1.8} />
                           {user.eco_coins ?? 0}
                         </strong>
 

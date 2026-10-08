@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { LeafIcon } from "../../components/SankalpoIcons";
 import { useAuth } from "../../context/AuthContext";
+import { useVerifiedImpact } from "../../hooks/useVerifiedImpact";
+import { formatImpactNumber } from "../../lib/impact";
 import { supabase } from "../../lib/supabase";
 import "./Home.css";
 
 export default function Home() {
   const { profile } = useAuth();
+  const { impact, loading: impactLoading } = useVerifiedImpact();
   const [challenge, setChallenge] = useState(null);
 
   useEffect(() => {
@@ -38,7 +42,10 @@ export default function Home() {
         <section className="welcome-card">
           <div>
             <p className="section-label">YOUR WEEK</p>
-            <h1>Good to see you, {displayName} 🌱</h1>
+            <h1>
+              Good to see you, {displayName}
+              <LeafIcon size={22} strokeWidth={1.7} />
+            </h1>
             <p className="welcome-copy">
               Make one meaningful environmental action and turn it into
               lasting community impact.
@@ -78,20 +85,20 @@ export default function Home() {
           </article>
 
           <aside className="impact-card">
-            <p className="section-label">YOUR IMPACT</p>
-            <h2>Keep the momentum going.</h2>
+            <p className="section-label">VERIFIED IMPACT</p>
+            <h2>Community progress, not self-reports.</h2>
             <div className="impact-list">
               <div>
-                <strong>{profile?.eco_coins ?? 0}</strong>
-                <span>Eco-Coins</span>
+                <strong>{impactLoading ? "—" : formatImpactNumber(impact.actions)}</strong>
+                <span>Approved actions</span>
               </div>
               <div>
-                <strong>{profile?.total_actions ?? 0}</strong>
-                <span>Actions completed</span>
+                <strong>{impactLoading ? "—" : formatImpactNumber(impact.trees)}</strong>
+                <span>Verified trees</span>
               </div>
               <div>
-                <strong>{profile?.trees_planted ?? 0}</strong>
-                <span>Trees planted</span>
+                <strong>{impactLoading ? "—" : formatImpactNumber(impact.wasteKg)}</strong>
+                <span>kg verified waste</span>
               </div>
             </div>
           </aside>

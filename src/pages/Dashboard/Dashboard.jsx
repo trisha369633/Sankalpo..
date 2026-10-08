@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
+import {
+  ActionsIcon,
+  ApprovedIcon,
+  CoinIcon,
+  RejectedIcon,
+  TreeIcon,
+  WasteIcon,
+} from "../../components/SankalpoIcons";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
 import "./Dashboard.css";
 
-const filters = [
+const submissionFilters = [
   { id: "approved", label: "Approved" },
   { id: "rejected", label: "Rejected" },
 ];
@@ -35,7 +43,7 @@ export default function Dashboard() {
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const submissionResult = await supabase
           .from("submissions")
@@ -94,18 +102,6 @@ export default function Dashboard() {
     );
   }
 
-  const pendingCount = submissions.filter(
-    (submission) => submission.status === "pending"
-  ).length;
-
-  const visibleSubmissions = submissions.filter(
-    (submission) => submission.status === activeFilter
-  );
-
-  const firstName = profile?.full_name
-    ? profile.full_name.split(" ")[0]
-    : user.email?.split("@")[0] || "there";
-
   const stats = [
     {
       label: "Eco-Coins",
@@ -133,6 +129,13 @@ export default function Dashboard() {
     },
   ];
 
+  const visibleSubmissions = submissions.filter(
+    (submission) => submission.status === activeFilter
+  );
+  const activeFilterDetails = submissionFilters.find(
+    (filter) => filter.id === activeFilter
+  );
+
   return (
     <main className="dashboard-page">
       <div className="dashboard-container">
@@ -141,8 +144,7 @@ export default function Dashboard() {
         <header className="dashboard-header">
           <div>
             <p className="dashboard-eyebrow">SANKALPO / DASHBOARD</p>
-            <h1>Welcome back, {firstName}</h1>
-            <p>Your environmental activity at a glance.</p>
+            <h1>Your environmental activity at a glance.</h1>
           </div>
         </header>
 
@@ -155,10 +157,10 @@ export default function Dashboard() {
                 <small>{stat.detail}</small>
               </div>
               <span className={`stat-icon stat-icon-${stat.icon}`} aria-hidden="true">
-                {stat.icon === "coin" && "◉"}
-                {stat.icon === "check" && "✓"}
-                {stat.icon === "tree" && "♧"}
-                {stat.icon === "waste" && "◌"}
+                {stat.icon === "coin" && <CoinIcon size={19} strokeWidth={1.8} />}
+                {stat.icon === "check" && <ActionsIcon size={19} strokeWidth={1.8} />}
+                {stat.icon === "tree" && <TreeIcon size={19} strokeWidth={1.8} />}
+                {stat.icon === "waste" && <WasteIcon size={19} strokeWidth={1.8} />}
               </span>
             </article>
           ))}
@@ -170,15 +172,13 @@ export default function Dashboard() {
               <p className="section-label">YOUR ACTIVITY</p>
               <h2 id="submissions-title">Your Submissions</h2>
             </div>
-            {pendingCount > 0 && (
-              <span className="pending-indicator">
-                {pendingCount} pending
-              </span>
-            )}
+            <span className="submission-count">
+              {submissions.length} total
+            </span>
           </div>
 
-          <div className="filter-tabs" role="tablist" aria-label="Submission status">
-            {filters.map((filter) => {
+          <div className="submission-status-row" role="tablist" aria-label="Submission status">
+            {submissionFilters.map((filter) => {
               const count = submissions.filter(
                 (submission) => submission.status === filter.id
               ).length;
@@ -189,33 +189,55 @@ export default function Dashboard() {
                   type="button"
                   role="tab"
                   aria-selected={activeFilter === filter.id}
-                  className={`filter-tab${activeFilter === filter.id ? " active" : ""}`}
+                  className={`submission-status-filter${
+                    activeFilter === filter.id ? " active" : ""
+                  }`}
                   onClick={() => setActiveFilter(filter.id)}
                 >
-                  {filter.id === "approved" && "✓"} {filter.label}
-                  <span>{count}</span>
+                  <span className="filter-symbol" aria-hidden="true">
+                    {filter.id === "approved"
+                      ? <ApprovedIcon size={15} strokeWidth={2} />
+                      : <RejectedIcon size={15} strokeWidth={2} />}
+                  </span>
+                  <span>{filter.label}</span>
+                  <small>{count}</small>
                 </button>
               );
             })}
           </div>
 
-          {visibleSubmissions.length === 0 ? (
-            <div className="submission-empty">
-              <span className="empty-icon">{activeFilter === "approved" ? "✓" : "↺"}</span>
-              <h3>No {activeFilter} submissions</h3>
-              <p>
-                {activeFilter === "approved"
-                  ? "Approved actions will appear here."
-                  : "Rejected submissions will appear here with admin feedback."}
-              </p>
-            </div>
-          ) : (
-            <div className="submission-list">
-              {visibleSubmissions.map((submission) => (
-                <SubmissionCard key={submission.id} submission={submission} />
-              ))}
-            </div>
-          )}
+          <div className="submission-status-divider" aria-hidden="true" />
+
+          <div className="submission-view">
+            {visibleSubmissions.length === 0 ? (
+              <div className="submission-empty">
+                <span className="empty-icon" aria-hidden="true">
+                  {activeFilter === "approved"
+                    ? <ApprovedIcon size={20} strokeWidth={1.8} />
+                    : <RejectedIcon size={20} strokeWidth={1.8} />}
+                </span>
+                <h3>No {activeFilter} submissions</h3>
+                <p>
+                  {activeFilter === "approved"
+                    ? "Approved actions will appear here."
+                    : "Rejected submissions will appear here with admin feedback."}
+                </p>
+              </div>
+            ) : (
+              <div className="submission-grid">
+                {visibleSubmissions.map((submission) => (
+                  <SubmissionCard
+                    key={submission.id}
+                    submission={submission}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <p className="visually-hidden" aria-live="polite">
+            Showing {activeFilterDetails?.label.toLowerCase()} submissions.
+          </p>
         </section>
       </div>
     </main>
@@ -267,6 +289,35 @@ function SubmissionCard({ submission }) {
 
   return (
     <article className={`submission-card status-${status}`}>
+      <div className="submission-card-topline">
+        <span className={`submission-status status-${status}`}>
+          {status === "approved"
+            ? <ApprovedIcon size={15} strokeWidth={2} />
+            : <RejectedIcon size={15} strokeWidth={2} />}
+          {status === "approved" ? "Approved" : "Rejected"}
+        </span>
+        <time dateTime={submission.created_at}>{submittedDate}</time>
+      </div>
+
+      <div className="submission-card-content">
+        <h3>{challengeTitle}</h3>
+
+        {status === "approved" ? (
+          <div className="approved-summary">
+            <span>+{submission.challenges?.reward ?? 0} Eco-Coins</span>
+            <p>Verified environmental action</p>
+          </div>
+        ) : (
+          <div className="rejected-summary">
+            <div className="feedback-label">Admin feedback</div>
+            <p>{submission.admin_note || "No rejection reason was provided."}</p>
+            <Link to={`/challenge/${submission.challenge_id}`}>
+              Submit Again
+            </Link>
+          </div>
+        )}
+      </div>
+
       {proofUrl && (
         <button
           type="button"
@@ -277,37 +328,6 @@ function SubmissionCard({ submission }) {
           <img src={proofUrl} alt={`Proof for ${challengeTitle}`} />
         </button>
       )}
-
-      <div className="submission-card-main">
-        <div className="submission-card-topline">
-          <span className={`submission-status status-${status}`}>
-            {status === "approved" ? "✓ Approved" : "Rejected"}
-          </span>
-          <time dateTime={submission.created_at}>{submittedDate}</time>
-        </div>
-
-        <h3>{challengeTitle}</h3>
-
-        {status === "approved" ? (
-          <div className="approved-summary">
-            <span className="approved-reward">
-              +{submission.challenges?.reward ?? 0} coins
-            </span>
-            <p>Verified environmental action</p>
-          </div>
-        ) : (
-          <div className="rejected-summary">
-            <div className="feedback-label">Admin feedback</div>
-            <p>{submission.admin_note || "No rejection reason was provided."}</p>
-            <Link
-              to={`/challenge/${submission.challenge_id}`}
-              className="resubmit-button"
-            >
-              Submit Again
-            </Link>
-          </div>
-        )}
-      </div>
 
       {proofLoading && (
         <div className="proof-loading" aria-label="Loading proof">

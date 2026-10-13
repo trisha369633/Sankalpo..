@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Navigate } from "react-router-dom";
 
 import {
@@ -806,6 +807,18 @@ export default function AdminDashboard() {
 function SubmissionCard({ submission, actionLoading, onApprove, onReject }) {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [photoLoading, setPhotoLoading] = useState(true);
+  const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isPhotoOpen) return undefined;
+
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setIsPhotoOpen(false);
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isPhotoOpen]);
 
   useEffect(() => {
     async function loadPhoto() {
@@ -836,11 +849,40 @@ function SubmissionCard({ submission, actionLoading, onApprove, onReject }) {
         {photoLoading ? (
           <div className="photo-placeholder">Loading photo...</div>
         ) : photoUrl ? (
-          <img src={photoUrl} alt="Environmental action proof" />
+          <button
+            className="submission-photo-trigger"
+            type="button"
+            onClick={() => setIsPhotoOpen(true)}
+            aria-label="View proof image full size"
+          >
+            <img src={photoUrl} alt="Environmental action proof" />
+          </button>
         ) : (
           <div className="photo-placeholder">No photo</div>
         )}
       </div>
+
+      {isPhotoOpen && photoUrl && (
+        <div
+          className="admin-proof-lightbox-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsPhotoOpen(false);
+          }}
+        >
+          <div className="admin-proof-lightbox" role="dialog" aria-modal="true" aria-label="Full-size submission proof">
+            <button
+              className="admin-proof-lightbox-close"
+              type="button"
+              onClick={() => setIsPhotoOpen(false)}
+              aria-label="Close proof image"
+            >
+              <X size={22} />
+            </button>
+            <img src={photoUrl} alt="Environmental action proof, full size" />
+          </div>
+        </div>
+      )}
 
       <div className="submission-content">
         <div className="submission-top">

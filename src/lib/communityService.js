@@ -28,8 +28,7 @@ async function getProfiles(userIds) {
 export async function loadCommunityPosts() {
   const { data: posts, error: postsError } = await supabase
     .from("community_posts")
-    .select("*")
-    .eq("verification_status", "verified")
+    .select("id, user_id, post_type, title, description, location, photo_url, verification_status, created_at, updated_at")
     .order("created_at", { ascending: false });
   if (postsError) throw postsError;
 

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
+import {
+  deduplicateChallengesByTitle,
+  loadUserChallengeSubmissionStatuses,
+} from "../../lib/challengeService";
 import { supabase } from "../../lib/supabase";
 import "./Challenges.css";
 
@@ -21,12 +26,21 @@ function isActiveChallenge(challenge) {
 }
 
 export default function Challenges() {
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState([]);
+  const [submissionStatuses, setSubmissionStatuses] = useState({});
+  const [submissionStatusLoading, setSubmissionStatusLoading] = useState(true);
+  const [submissionStatusError, setSubmissionStatusError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
+
     async function loadChallenges() {
+      setLoading(true);
+      setSubmissionStatusLoading(Boolean(user));
+      setSubmissionStatusError("");
       const { data, error } = await supabase
         .from("challenges")
         .select("*")
@@ -34,16 +48,44 @@ export default function Challenges() {
         .order("start_date", { ascending: false });
 
       if (error) {
-        setError(error.message);
+        if (active) setError(error.message);
       } else {
-        setChallenges(data || []);
+        const loadedChallenges = deduplicateChallengesByTitle(data || []);
+        if (active) {
+          setError("");
+          setChallenges(loadedChallenges);
+        }
+
+        if (user && loadedChallenges.length) {
+          try {
+            const statuses = await loadUserChallengeSubmissionStatuses(
+              user.id,
+              loadedChallenges.map((challenge) => challenge.id)
+            );
+            if (active) setSubmissionStatuses(statuses);
+          } catch (statusError) {
+            if (active) {
+              setSubmissionStatusError(
+                statusError.message || "Unable to check your challenge submissions."
+              );
+            }
+          }
+        } else if (active) {
+          setSubmissionStatuses({});
+        }
       }
 
-      setLoading(false);
+      if (active) {
+        setLoading(false);
+        setSubmissionStatusLoading(false);
+      }
     }
 
-    loadChallenges();
-  }, []);
+    void loadChallenges();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const activeChallenge = challenges.find(isActiveChallenge);
   const pastChallenges = challenges.filter(
@@ -87,7 +129,13 @@ export default function Challenges() {
               </div>
 
               {activeChallenge ? (
-                <ChallengeCard challenge={activeChallenge} featured />
+                <ChallengeCard
+                  challenge={activeChallenge}
+                  featured
+                  submissionStatus={submissionStatuses[activeChallenge.id]}
+                  statusLoading={submissionStatusLoading}
+                  statusError={submissionStatusError}
+                />
               ) : (
                 <div className="empty-card">
                   <h2>No active challenge this week</h2>
@@ -108,7 +156,13 @@ export default function Challenges() {
               {pastChallenges.length > 0 ? (
                 <div className="past-challenge-grid">
                   {pastChallenges.map((challenge) => (
-                    <ChallengeCard key={challenge.id} challenge={challenge} />
+                    <ChallengeCard
+                      key={challenge.id}
+                      challenge={challenge}
+                      submissionStatus={submissionStatuses[challenge.id]}
+                      statusLoading={submissionStatusLoading}
+                      statusError={submissionStatusError}
+                    />
                   ))}
                 </div>
               ) : (
@@ -124,7 +178,7 @@ export default function Challenges() {
   );
 }
 
-function ChallengeCard({ challenge, featured = false }) {
+function ChallengeCard({ challenge, featured = false, submissionStatus, statusLoading, statusError }) {
   const [showDetails, setShowDetails] = useState(false);
   const instructions = challenge.instructions ||
     "Complete the action and submit clear proof of what you did.";
@@ -152,9 +206,19 @@ function ChallengeCard({ challenge, featured = false }) {
         </div>
 
         <div className="challenge-card-actions">
-          <Link to={`/challenge/${challenge.id}`} className="take-challenge-button">
-            Take Challenge
-          </Link>
+          {statusLoading ? (
+            <span className="challenge-status-message">Checking submission status...</span>
+          ) : statusError ? (
+            <span className="challenge-status-message" role="alert">Submission status unavailable</span>
+          ) : submissionStatus === "pending" ? (
+            <span className="challenge-status-message" role="status">Submission pending verification</span>
+          ) : submissionStatus === "approved" ? (
+            <span className="challenge-status-message" role="status">You have already completed this challenge</span>
+          ) : (
+            <Link to={`/challenge/${challenge.id}`} className="take-challenge-button">
+              {submissionStatus === "rejected" ? "Submit again" : "Take Challenge"}
+            </Link>
+          )}
           <button
             type="button"
             className="details-toggle"

@@ -114,6 +114,7 @@ a {
 }
 
 .verified-impact-strip strong {
+  min-height: 29px;
   color: #285c38;
   font-size: 24px;
 }

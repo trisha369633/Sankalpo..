@@ -1,49 +1,150 @@
 import { supabase } from "./supabase";
 
-const postFields = `*,
-  author:profiles(full_name, avatar_url),
-  reactions:community_post_reactions(id, reaction_type, user_id),
-  comments:community_comments(id, author_id, text, created_at, author:profiles(full_name, avatar_url))`;
+export function normalizeCommunityImageUrl(imageUrl) {
+  if (typeof imageUrl !== "string") return null;
 
-export async function loadCommunityPosts() {
-  const { data, error } = await supabase
-    .from("community_posts")
-    .select(postFields)
-    .order("created_at", { ascending: false });
+  const value = imageUrl.trim();
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
 
-  if (error) throw error;
-  return data || [];
+  const storagePath = value.replace(/^\/+/, "");
+  if (!storagePath || /:\/\//.test(storagePath)) return null;
+
+  const { data } = supabase.storage.from("submission-proofs").getPublicUrl(storagePath);
+  return data?.publicUrl || null;
 }
 
-export async function createCommunityPost({ title, description, postType, location }) {
+async function getProfiles(userIds) {
+  const ids = [...new Set((userIds || []).filter(Boolean))];
+  if (!ids.length) return {};
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url")
+    .in("id", ids);
+  if (error) throw error;
+  return Object.fromEntries((data || []).map((profile) => [profile.id, profile]));
+}
+
+export async function loadCommunityPosts() {
+  const { data: posts, error: postsError } = await supabase
+    .from("community_posts")
+    .select("*")
+    .eq("verification_status", "verified")
+    .order("created_at", { ascending: false });
+  if (postsError) throw postsError;
+
+  const postList = posts || [];
+  const postIds = postList.map((post) => post.id);
+  if (!postIds.length) return [];
+
+  const [reactionResult, commentResult] = await Promise.all([
+    supabase
+      .from("community_post_reactions")
+      .select("id, post_id, user_id, reaction_type")
+      .in("post_id", postIds),
+    supabase
+      .from("community_comments")
+      .select("id, post_id, author_id, text, created_at")
+      .in("post_id", postIds),
+  ]);
+  if (reactionResult.error) throw reactionResult.error;
+  if (commentResult.error) throw commentResult.error;
+
+  const commentList = commentResult.data || [];
+  const profiles = await getProfiles([
+    ...postList.map((post) => post.author_id),
+    ...commentList.map((comment) => comment.author_id),
+  ]);
+
+  const reactionsByPost = new Map();
+  for (const reaction of reactionResult.data || []) {
+    const list = reactionsByPost.get(reaction.post_id) || [];
+    list.push(reaction);
+    reactionsByPost.set(reaction.post_id, list);
+  }
+
+  const commentsByPost = new Map();
+  for (const comment of commentList) {
+    const list = commentsByPost.get(comment.post_id) || [];
+    list.push({ ...comment, author: profiles[comment.author_id] || null });
+    commentsByPost.set(comment.post_id, list);
+  }
+
+  return postList.map((post) => ({
+    ...post,
+    author: profiles[post.author_id] || null,
+    reactions: reactionsByPost.get(post.id) || [],
+    comments: commentsByPost.get(post.id) || [],
+  }));
+}
+
+export async function createCommunityPost({ content, postType, location, imageUrl }) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in to publish a post.");
+
   const { data, error } = await supabase
     .from("community_posts")
     .insert({
-      author_id: (await supabase.auth.getUser()).data.user.id,
-      title,
-      description,
-      post_type: postType,
-      location,
+      author_id: auth.user.id,
+      title: content.trim().slice(0, 100),
+      description: content.trim(),
+      post_type: postType || "action",
+      location: location.trim() || null,
+      photo_url: imageUrl || null,
       verification_status: "pending",
     })
-    .select("id, created_at")
+    .select("id, author_id, title, description, post_type, location, photo_url, verification_status, created_at")
     .single();
-
   if (error) throw error;
   return data;
 }
 
-export async function toggleCommunityReaction(postId, reactionType) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to react.");
+export async function updateCommunityPost(postId, updates) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in to edit this post.");
 
-  const { data: existing } = await supabase
+  const updateData = { ...updates };
+  if (typeof updateData.content === "string") {
+    updateData.description = updateData.content.trim();
+    updateData.title = updateData.content.trim().slice(0, 100);
+    delete updateData.content;
+  }
+
+  const { data, error } = await supabase
+    .from("community_posts")
+    .update(updateData)
+    .eq("id", postId)
+    .eq("author_id", auth.user.id)
+    .select("id, title, description, post_type, location, photo_url, updated_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCommunityPost(postId) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in to delete this post.");
+
+  const { error } = await supabase
+    .from("community_posts")
+    .delete()
+    .eq("id", postId)
+    .eq("author_id", auth.user.id);
+  if (error) throw error;
+  return true;
+}
+
+export async function toggleCommunityReaction(postId) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in to react.");
+
+  const { data: existing, error: selectError } = await supabase
     .from("community_post_reactions")
     .select("id")
     .eq("post_id", postId)
-    .eq("user_id", user.id)
-    .eq("reaction_type", reactionType)
+    .eq("user_id", auth.user.id)
     .maybeSingle();
+  if (selectError) throw selectError;
 
   if (existing) {
     const { error } = await supabase
@@ -56,140 +157,41 @@ export async function toggleCommunityReaction(postId, reactionType) {
 
   const { error } = await supabase
     .from("community_post_reactions")
-    .insert({
-      post_id: postId,
-      user_id: user.id,
-      reaction_type: reactionType,
-    });
-
+    .insert({ post_id: postId, user_id: auth.user.id, reaction_type: "support" });
   if (error) throw error;
   return { created: true };
 }
 
-export async function addCommunityComment(postId, text) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to comment.");
+export async function addCommunityComment(postId, content) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please sign in to comment.");
 
   const { data, error } = await supabase
     .from("community_comments")
     .insert({
       post_id: postId,
-      author_id: user.id,
-      text,
+      author_id: auth.user.id,
+      text: content.trim(),
     })
-    .select("id, created_at, text, author_id")
+    .select("id, post_id, author_id, text, created_at")
     .single();
-
   if (error) throw error;
   return data;
 }
 
-export async function reportCommunityPost(postId, reason) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to report.");
+export async function uploadCommunityImage(file, userId) {
+  if (!file) throw new Error("Choose an image to upload.");
+  if (!file.type.startsWith("image/")) throw new Error("Only image files are supported.");
+  if (file.size > 8 * 1024 * 1024) throw new Error("Images must be smaller than 8 MB.");
 
-  const { error } = await supabase.from("post_reports").insert({
-    post_id: postId,
-    reporter_id: user.id,
-    reason,
-    status: "pending",
-  });
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const unique = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const filePath = `${userId}/${unique}.${extension}`;
+  const { data, error } = await supabase.storage
+    .from("submission-proofs")
+    .upload(filePath, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+  if (error) throw new Error(`Image upload failed: ${error.message || "The submission-proofs bucket is unavailable."}`);
 
-  if (error) throw error;
-  return true;
-}
-
-export async function loadProblems() {
-  const { data, error } = await supabase
-    .from("environmental_problems")
-    .select("*, author:profiles(full_name, avatar_url)")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createProblem({ title, description, problemType, location }) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to report a problem.");
-
-  const { data, error } = await supabase
-    .from("environmental_problems")
-    .insert({
-      author_id: user.id,
-      title,
-      description,
-      problem_type: problemType,
-      location,
-      status: "reported",
-    })
-    .select("id, created_at")
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function reportProblem(problemId, reason) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to report.");
-
-  const { error } = await supabase.from("problem_reports").insert({
-    problem_id: problemId,
-    reporter_id: user.id,
-    reason,
-    status: "pending",
-  });
-
-  if (error) throw error;
-  return true;
-}
-
-export async function createConversation(participantId) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to message.");
-  if (!participantId || participantId === user.id) {
-    throw new Error("Choose a different participant.");
-  }
-
-  const { data, error } = await supabase
-    .from("conversations")
-    .insert({
-      owner_id: user.id,
-      participant_id: participantId,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function loadMessages(conversationId) {
-  const { data, error } = await supabase
-    .from("messages")
-    .select("*, sender:profiles(full_name, avatar_url)")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function sendMessage(conversationId, content) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please sign in to message.");
-
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content,
-    })
-    .select("id, content, created_at, sender_id")
-    .single();
-
-  if (error) throw error;
-  return data;
+  const { data: publicUrl } = supabase.storage.from("submission-proofs").getPublicUrl(data.path);
+  return publicUrl.publicUrl;
 }

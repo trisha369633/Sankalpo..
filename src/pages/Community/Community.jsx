@@ -1,178 +1,257 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  CheckCircle2,
+  ImagePlus,
+  Leaf,
+  LoaderCircle,
+  MapPin,
+  MessageCircle,
+  MoreHorizontal,
+  Send,
+  Share2,
+  UploadCloud,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   addCommunityComment,
   createCommunityPost,
-  createProblem,
+  deleteCommunityPost,
   loadCommunityPosts,
-  loadProblems,
-  loadMessages,
-  reportCommunityPost,
-  reportProblem,
-  sendMessage,
-  createConversation,
+  normalizeCommunityImageUrl,
   toggleCommunityReaction,
+  updateCommunityPost,
+  uploadCommunityImage,
 } from "../../lib/communityService";
 import "./Community.css";
 
-const tabs = ["Feed", "Problems", "Messages"];
+const tabs = ["Create Post", "Feed"];
+const postTypes = [
+  { value: "action", label: "Eco action" },
+  { value: "problem", label: "Environmental problem" },
+  { value: "success", label: "Success story" },
+  { value: "achievement", label: "Achievement" },
+];
+
+function formatDate(value) {
+  if (!value) return "Recently";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function initials(name) {
+  return (name || "S").slice(0, 1).toUpperCase();
+}
+
+function Avatar({ item, size = 42 }) {
+  const name = item?.full_name || item?.author?.full_name || "Sankalpo member";
+  const avatar = item?.avatar_url || item?.author?.avatar_url;
+  if (avatar) {
+    return <img className="community-avatar-image" src={avatar} alt={`${name}'s profile`} width={size} height={size} />;
+  }
+  return <span className="community-avatar-fallback" style={{ width: size, height: size }}>{initials(name)}</span>;
+}
+
+function LoadingState({ label = "Loading…" }) {
+  return (
+    <div className="community-loading" role="status">
+      <LoaderCircle className="spin" size={22} />
+      <span>{label}</span>
+    </div>
+  );
+}
 
 export default function Community() {
-  const { profile, user } = useAuth();
+  const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState("Feed");
   const [posts, setPosts] = useState([]);
-  const [problems, setProblems] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [selectedConversation, setSelectedConversation] = useState("");
-  const [participantId, setParticipantId] = useState("");
-  const [postForm, setPostForm] = useState({
-    title: "",
-    description: "",
-    postType: "action",
-    location: "",
-  });
-  const [problemForm, setProblemForm] = useState({
-    title: "",
-    description: "",
-    problemType: "other",
-    location: "",
-  });
+  const [notice, setNotice] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [postLocation, setPostLocation] = useState("");
+  const [postType, setPostType] = useState("action");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+  const [commentText, setCommentText] = useState({});
+  const [openComments, setOpenComments] = useState({});
+  const [selectedPostImage, setSelectedPostImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const currentProfile = profile || {
+    id: user?.id,
+    full_name: user?.user_metadata?.full_name || "Sankalpo member",
+    avatar_url: user?.user_metadata?.avatar_url,
+  };
+
+  async function loadFeed() {
+    setLoadingPosts(true);
+    try {
+      const data = await loadCommunityPosts();
+      setPosts(data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to load community posts.");
+    } finally {
+      setLoadingPosts(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) {
-      setLoading(false);
+      setLoadingPosts(false);
       return;
     }
-
-    async function loadData() {
-      try {
-        const [postData, problemData] = await Promise.all([
-          loadCommunityPosts(),
-          loadProblems(),
-        ]);
-        setPosts(postData);
-        setProblems(problemData);
-      } catch (err) {
-        setError(err.message || "Unable to load community activity.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
+    loadFeed();
   }, [user]);
 
   useEffect(() => {
-    if (!selectedConversation) return;
-    loadMessages(selectedConversation)
-      .then(setMessages)
-      .catch((err) => setError(err.message));
-  }, [selectedConversation]);
+    return () => previewUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [previewUrls]);
+
+  function clearImages() {
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setSelectedFiles([]);
+    setPreviewUrls([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function addImages(files) {
+    const incoming = Array.from(files || []);
+    if (!incoming.length) return;
+    if (incoming.length + selectedFiles.length > 3) {
+      setError("You can attach up to three images at a time.");
+      return;
+    }
+    const oversized = incoming.find((file) => file.size > 8 * 1024 * 1024);
+    if (oversized) {
+      setError(`${oversized.name} is larger than 8 MB.`);
+      return;
+    }
+    if (incoming.some((file) => !file.type.startsWith("image/"))) {
+      setError("Only image files are supported.");
+      return;
+    }
+    setSelectedFiles((current) => [...current, ...incoming]);
+    setPreviewUrls((current) => [...current, ...incoming.map((file) => URL.createObjectURL(file))]);
+  }
+
+  async function uploadImages() {
+    if (!selectedFiles.length) return [];
+    setUploading(true);
+    try {
+      const urls = [];
+      for (const file of selectedFiles) {
+        urls.push(await uploadCommunityImage(file, user.id));
+      }
+      return urls;
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submitPost(event) {
     event.preventDefault();
     setError("");
+    setNotice("");
+    if (!postContent.trim()) {
+      setError("Write something before publishing your post.");
+      return;
+    }
+
+    setSaving(true);
     try {
-      await createCommunityPost(postForm);
-      const freshPosts = await loadCommunityPosts();
-      setPosts(freshPosts);
-      setPostForm({ title: "", description: "", postType: "action", location: "" });
+      const imageUrls = await uploadImages();
+      await createCommunityPost({
+        content: postContent.trim(),
+        postType,
+        location: postLocation.trim(),
+        imageUrl: imageUrls[0] || null,
+      });
+      setPostContent("");
+      setPostLocation("");
+      setPostType("action");
+      clearImages();
+      setNotice("Your post was submitted for admin review.");
+      await loadFeed();
       setActiveTab("Feed");
     } catch (err) {
       setError(err.message || "Unable to publish your post.");
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function submitProblem(event) {
-    event.preventDefault();
-    setError("");
+  async function reactToPost(postId) {
+    if (!user) return;
     try {
-      await createProblem(problemForm);
-      const freshProblems = await loadProblems();
-      setProblems(freshProblems);
-      setProblemForm({ title: "", description: "", problemType: "other", location: "" });
-      setActiveTab("Problems");
+      await toggleCommunityReaction(postId);
+      await loadFeed();
     } catch (err) {
-      setError(err.message || "Unable to report the problem.");
-    }
-  }
-
-  async function reactToPost(postId, reactionType) {
-    try {
-      await toggleCommunityReaction(postId, reactionType);
-      setPosts((current) => current.map((post) => (
-        post.id === postId
-          ? {
-              ...post,
-              reactions: post.reactions.filter(
-                (reaction) => reaction.user_id !== user.id
-              ),
-            }
-          : post
-      )));
-      const freshPosts = await loadCommunityPosts();
-      setPosts(freshPosts);
-    } catch (err) {
-      setError(err.message || "Unable to react.");
+      setError(err.message || "Unable to react to this post.");
     }
   }
 
   async function commentOnPost(postId, text) {
     if (!text.trim()) return;
     try {
-      await addCommunityComment(postId, text.trim());
-      const freshPosts = await loadCommunityPosts();
-      setPosts(freshPosts);
+      await addCommunityComment(postId, text);
+      await loadFeed();
+      setCommentText((current) => ({ ...current, [postId]: "" }));
     } catch (err) {
-      setError(err.message || "Unable to add a comment.");
+      setError(err.message || "Unable to add your comment.");
     }
   }
 
-  async function reportPost(postId) {
-    const reasonText = window.prompt("Why are you reporting this post?", "");
-    if (!reasonText?.trim()) return;
+  async function savePostEdit(post) {
+    if (!editingText.trim()) return;
     try {
-      await reportCommunityPost(postId, reasonText.trim());
-      setMessage("Report submitted for moderation.");
+      await updateCommunityPost(post.id, { content: editingText.trim() });
+      setEditingPost(null);
+      setEditingText("");
+      await loadFeed();
     } catch (err) {
-      setError(err.message || "Unable to submit the report.");
+      setError(err.message || "Unable to update this post.");
     }
   }
 
-  async function reportProblemItem(problemId) {
-    const reasonText = window.prompt("Why are you reporting this problem?", "");
-    if (!reasonText?.trim()) return;
+  async function removePost(post) {
+    if (!window.confirm("Delete this post? This cannot be undone.")) return;
     try {
-      await reportProblem(problemId, reasonText.trim());
-      setMessage("Problem report submitted for moderation.");
+      await deleteCommunityPost(post.id);
+      await loadFeed();
     } catch (err) {
-      setError(err.message || "Unable to submit the report.");
+      setError(err.message || "Unable to delete this post.");
     }
   }
 
-  async function startConversation(event) {
-    event.preventDefault();
+  async function sharePost(post) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}#post-${post.id}`;
+    const shareData = {
+      title: "Sankalpo Community action",
+      text: post.description || post.title,
+      url: shareUrl,
+    };
     try {
-      const conversation = await createConversation(participantId);
-      setSelectedConversation(conversation.id);
-      setMessages(await loadMessages(conversation.id));
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setNotice("Post shared.");
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setNotice("Share link copied to your clipboard.");
+      }
     } catch (err) {
-      setError(err.message || "Unable to start the conversation.");
-    }
-  }
-
-  async function sendDirectMessage(event) {
-    event.preventDefault();
-    if (!selectedConversation || !message.trim()) return;
-    try {
-      await sendMessage(selectedConversation, message.trim());
-      setMessage("");
-      setMessages(await loadMessages(selectedConversation));
-    } catch (err) {
-      setError(err.message || "Unable to send the message.");
+      if (err?.name !== "AbortError") {
+        setError("Sharing is unavailable. Open the post details to copy its link.");
+      }
     }
   }
 
@@ -180,130 +259,270 @@ export default function Community() {
     <main className="community-page">
       <div className="community-container">
         <header className="community-header">
-          <div>
-            <p className="community-eyebrow">COMMUNITY ACTIONS</p>
-            <h1>Grow change together.</h1>
-            <p>Share verified environmental actions, report local problems, and connect with people who are taking meaningful steps.</p>
-          </div>
-          <span className="community-pill">{profile?.full_name || "Sankalpo member"}</span>
+          <p className="community-eyebrow">COMMUNITY ACTIONS</p>
         </header>
 
-        {error && <div className="community-empty">{error}</div>}
-        {message && <div className="community-empty">{message}</div>}
+        {error && <div className="community-alert community-alert-error" role="alert">{error}</div>}
+        {notice && <div className="community-alert community-alert-success" role="status">{notice}</div>}
 
-        <div className="community-tabs" role="tablist">
+        {selectedPostImage && (
+          <div className="community-lightbox-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedPostImage(null);
+          }}>
+            <div className="community-lightbox" role="dialog" aria-modal="true" aria-label="Full-size community photo">
+              <button type="button" className="community-lightbox-close" onClick={() => setSelectedPostImage(null)} aria-label="Close photo">
+                <X size={22} />
+              </button>
+              <img src={selectedPostImage.src} alt={selectedPostImage.alt} />
+            </div>
+          </div>
+        )}
+
+        <nav className="community-tabs" role="tablist" aria-label="Community actions">
           {tabs.map((tab) => (
             <button
               key={tab}
-              className={`community-tab${activeTab === tab ? " active" : ""}`}
-              onClick={() => setActiveTab(tab)}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              className={`community-tab${activeTab === tab ? " active" : ""}`}
+              onClick={() => {
+                setActiveTab(tab);
+                setError("");
+              }}
             >
+              {tab === "Create Post" ? <Leaf size={17} /> : <UserRound size={17} />}
               {tab}
             </button>
           ))}
-        </div>
+        </nav>
+
+        {activeTab === "Create Post" && (
+          <section className="community-create-panel" aria-label="Create a community post">
+            <div className="community-create-heading">
+              <Avatar item={currentProfile} size={44} />
+              <div>
+                <h2>Create a post</h2>
+                <p>Share an action, update, or environmental concern with the community.</p>
+              </div>
+            </div>
+            <form className="community-create-form" onSubmit={submitPost}>
+              <label className="community-field community-field-full">
+                <span>Post content</span>
+                <textarea
+                  value={postContent}
+                  onChange={(event) => setPostContent(event.target.value)}
+                  rows="5"
+                  maxLength={2000}
+                  placeholder="What would you like to share?"
+                  required
+                />
+              </label>
+              <label className="community-field">
+                <span>Post type</span>
+                <select value={postType} onChange={(event) => setPostType(event.target.value)}>
+                  {postTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                </select>
+              </label>
+              <label className="community-field">
+                <span>Location</span>
+                <input
+                  value={postLocation}
+                  onChange={(event) => setPostLocation(event.target.value)}
+                  placeholder="City or area"
+                  maxLength={160}
+                />
+              </label>
+              <div className="community-upload-section community-field-full">
+                <div className="community-upload-heading">
+                  <div><ImagePlus size={18} /><span>Optional image</span></div>
+                  <small>Up to 3 images · 8 MB each</small>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  className="visually-hidden"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => addImages(event.target.files)}
+                />
+                <button className="community-upload-button" type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  <UploadCloud size={17} /> Upload images
+                </button>
+                {previewUrls.length > 0 && (
+                  <div className="community-preview-grid">
+                    {previewUrls.map((url, index) => (
+                      <div className="community-preview-item" key={`${url}-${index}`}>
+                        <img src={url} alt={`Selected upload ${index + 1}`} />
+                        <button type="button" aria-label={`Remove image ${index + 1}`} onClick={() => {
+                          setSelectedFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+                          setPreviewUrls((current) => current.filter((_, currentIndex) => currentIndex !== index));
+                          previewUrls.filter((_, currentIndex) => currentIndex !== index).forEach((item) => URL.revokeObjectURL(item));
+                        }}><span aria-hidden="true">×</span></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="community-composer-actions community-field-full">
+                <span>{uploading && <><LoaderCircle className="spin" size={15} /> Uploading…</>}</span>
+                <button className="community-primary-button" type="submit" disabled={saving || uploading}>
+                  {saving ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
+                  {saving ? "Publishing…" : "Publish Post"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
 
         {activeTab === "Feed" && (
-          <div className="community-grid">
-            <section>
-              <article className="community-card community-composer">
-                <h2>Share an environmental action</h2>
-                <p>Posts are reviewed before their impact is shown as verified.</p>
-                <form className="community-form-grid" onSubmit={submitPost}>
-                  <label>Title<input required value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value })} /></label>
-                  <label>Type<select value={postForm.postType} onChange={(event) => setPostForm({ ...postForm, postType: event.target.value })}><option value="action">Action</option><option value="problem">Problem</option><option value="success">Success</option><option value="achievement">Achievement</option></select></label>
-                  <label className="community-form-wide">Description<textarea required rows="3" value={postForm.description} onChange={(event) => setPostForm({ ...postForm, description: event.target.value })} /></label>
-                  <label>Location<input value={postForm.location} onChange={(event) => setPostForm({ ...postForm, location: event.target.value })} /></label>
-                  <div className="community-form-actions"><button className="community-primary-button" type="submit">Publish post</button></div>
-                </form>
-              </article>
+          <section className="community-feed-section" aria-label="Shared community posts">
+            <div className="community-feed-heading">
+              <div>
+                <h2>Community feed</h2>
+                <p>Shared posts from all members, newest first.</p>
+              </div>
+              <span>{posts.length} {posts.length === 1 ? "post" : "posts"}</span>
+            </div>
 
-              {loading ? <div className="community-empty">Loading community activity...</div> : posts.length === 0 ? (
-                <div className="community-empty">No posts yet. Be the first to share an action.</div>
-              ) : (
-                <div className="community-feed-list">
-                  {posts.map((post) => (
-                    <article className="community-post" key={post.id}>
-                      <div className="community-post-header">
+            {loadingPosts ? <LoadingState label="Loading community feed…" /> : posts.length === 0 ? (
+              <div className="community-empty-state">
+                <Leaf size={30} />
+                <h3>No community posts yet</h3>
+                <p>Be the first member to share an update.</p>
+              </div>
+            ) : (
+              <div className="community-feed-list">
+                {posts.map((post) => {
+                  const isOwner = post.author_id === user?.id;
+                  const reactionCount = post.reactions?.length || 0;
+                  const postText = post.description || post.title;
+                  const postImage = normalizeCommunityImageUrl(post.photo_url);
+                  const commentCount = post.comments?.length || 0;
+                  const commentsOpen = Boolean(openComments[post.id]);
+                  return (
+                    <article
+                      className="community-post-card"
+                      id={`post-${post.id}`}
+                      key={post.id}
+                    >
+                      <header className="community-post-header">
                         <div className="community-author">
-                          <span className="community-avatar">{post.author?.full_name?.slice(0, 1) || "S"}</span>
-                          <div><strong>{post.author?.full_name || "Sankalpo member"}</strong><span>{new Date(post.created_at).toLocaleDateString()}</span></div>
+                          <Avatar item={post.author || post} size={48} />
+                          <div>
+                            <div className="community-author-name-row">
+                              <strong>{post.author?.full_name || "Sankalpo member"}</strong>
+                              <span className="community-post-type-badge">{post.post_type || "action"}</span>
+                            </div>
+                            <span className="community-post-date">{formatDate(post.created_at)}</span>
+                          </div>
                         </div>
-                        <span className={`community-status ${post.verification_status}`}>{post.verification_status}</span>
-                      </div>
-                      <h3>{post.title}</h3>
-                      <p>{post.description || "Shared with the Sankalpo community."}</p>
-                      {post.location && <div className="community-post-meta"><span>Location: {post.location}</span></div>}
-                      <div className="community-post-actions">
-                        <button className="community-action-button" type="button" onClick={() => reactToPost(post.id, "support")}>Support ({post.reactions?.filter((reaction) => reaction.reaction_type === "support").length || 0})</button>
-                        <button className="community-action-button" type="button" onClick={() => reactToPost(post.id, "inspired")}>Inspired ({post.reactions?.filter((reaction) => reaction.reaction_type === "inspired").length || 0})</button>
-                        <button className="community-action-button" type="button" onClick={() => reportPost(post.id)}>Report</button>
-                      </div>
-                      <div className="community-comments">
-                        {post.comments?.slice(0, 3).map((comment) => (
-                          <div className="community-comment" key={comment.id}><strong>{comment.author?.full_name || "Member"}</strong><p>{comment.text}</p></div>
-                        ))}
-                        <form onSubmit={(event) => { event.preventDefault(); commentOnPost(post.id, event.currentTarget.elements.comment.value); event.currentTarget.reset(); }}>
-                          <input name="comment" aria-label="Add a comment" placeholder="Add a thoughtful comment..." />
-                          <button className="community-secondary-button" type="submit">Comment</button>
-                        </form>
-                      </div>
+                        {isOwner && (
+                          <div className="community-owner-menu">
+                            <button type="button" aria-label="Post options" aria-expanded="false"><MoreHorizontal size={19} /></button>
+                            <div className="community-owner-menu-panel">
+                              <button type="button" onClick={() => {
+                                setEditingPost(post);
+                                setEditingText(post.description || post.title || "");
+                              }}>Edit post</button>
+                              <button type="button" className="community-owner-delete" onClick={() => removePost(post)}>Delete post</button>
+                            </div>
+                          </div>
+                        )}
+                      </header>
+
+                      {editingPost?.id === post.id ? (
+                        <div className="community-edit-panel">
+                          <textarea value={editingText} onChange={(event) => setEditingText(event.target.value)} rows="4" />
+                          <div>
+                            <button type="button" className="community-secondary-button" onClick={() => setEditingPost(null)}>Cancel</button>
+                            <button type="button" className="community-primary-button" onClick={() => savePostEdit(post)}>Save changes</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="community-post-body">
+                          <p>{postText || "Shared with the Sankalpo community."}</p>
+                          {post.location && <div className="community-location"><MapPin size={14} /> {post.location}</div>}
+                        </div>
+                      )}
+
+                      {postImage && (
+                        <button
+                          type="button"
+                          className="community-post-image-wrap"
+                          onClick={() => setSelectedPostImage({ src: postImage, alt: post.title || "Community post" })}
+                          aria-label="Open photo in full size"
+                        >
+                          <img
+                            className="community-post-image"
+                            src={postImage}
+                            alt={post.title || "Community post"}
+                            loading="lazy"
+                          />
+                        </button>
+                      )}
+
+                      <footer className="community-post-footer" onClick={(event) => event.stopPropagation()}>
+                        <div className="community-post-actions">
+                          <button type="button" className="community-react-button" onClick={() => reactToPost(post.id)}>
+                            <CheckCircle2 size={19} />
+                            <span>Like</span>
+                            <strong>{reactionCount}</strong>
+                          </button>
+                          <button
+                            type="button"
+                            className="community-comment-action"
+                            onClick={() => setOpenComments((current) => ({ ...current, [post.id]: !commentsOpen }))}
+                            aria-expanded={commentsOpen}
+                          >
+                            <MessageCircle size={19} />
+                            <span>Comment</span>
+                            <strong>{commentCount}</strong>
+                          </button>
+                          <button type="button" className="community-share-button" onClick={() => sharePost(post)}>
+                            <Share2 size={19} />
+                            <span>Share</span>
+                          </button>
+                        </div>
+                      </footer>
+
+                      {commentsOpen && (
+                        <div className="community-comments">
+                          {(post.comments || []).map((comment) => (
+                            <div className="community-comment" key={comment.id}>
+                              <Avatar item={comment.author || comment} size={32} />
+                              <div>
+                                <strong>{comment.author?.full_name || "Sankalpo member"}</strong>
+                                <p>{comment.text || ""}</p>
+                              </div>
+                            </div>
+                          ))}
+                          <form
+                            className="community-comment-form"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              commentOnPost(post.id, commentText[post.id] || "");
+                            }}
+                          >
+                            <Avatar item={post.author || currentProfile} size={32} />
+                            <input
+                              value={commentText[post.id] || ""}
+                              onChange={(event) => setCommentText((current) => ({ ...current, [post.id]: event.target.value }))}
+                              placeholder="Write a comment…"
+                              aria-label="Comment"
+                            />
+                            <button type="submit" aria-label="Post comment" disabled={!commentText[post.id]?.trim()}><Send size={16} /></button>
+                          </form>
+                        </div>
+                      )}
                     </article>
-                  ))}
-                </div>
-              )}
-            </section>
-            <aside className="community-sidebar">
-              <section className="community-panel"><h2>How verification works</h2><p>Community posts remain visible as community activity. Only verified posts are included in verified impact metrics.</p><button className="community-secondary-button" type="button" onClick={() => setActiveTab("Problems")}>Review reported problems</button></section>
-              <section className="community-panel"><h2>Community guidance</h2><p>Keep posts factual, include proof where possible, and report content that may be misleading or harmful.</p></section>
-            </aside>
-          </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         )}
 
-        {activeTab === "Problems" && (
-          <div className="community-grid">
-            <section className="community-card">
-              <h2>Report an environmental problem</h2>
-              <p>Reports create an action loop for the community and local administrators.</p>
-              <form className="community-form-grid" onSubmit={submitProblem}>
-                <label>Title<input required value={problemForm.title} onChange={(event) => setProblemForm({ ...problemForm, title: event.target.value })} /></label>
-                <label>Problem type<select value={problemForm.problemType} onChange={(event) => setProblemForm({ ...problemForm, problemType: event.target.value })}><option value="litter">Litter</option><option value="water">Water</option><option value="waste">Waste</option><option value="recycling">Recycling</option><option value="other">Other</option></select></label>
-                <label className="community-form-wide">What is happening?<textarea required rows="4" value={problemForm.description} onChange={(event) => setProblemForm({ ...problemForm, description: event.target.value })} /></label>
-                <label>Location<input value={problemForm.location} onChange={(event) => setProblemForm({ ...problemForm, location: event.target.value })} /></label>
-                <div className="community-form-actions"><button className="community-primary-button" type="submit">Create report</button></div>
-              </form>
-            </section>
-            <section className="community-panel">
-              <h2>Reported problems</h2>
-              <p>Reports are visible to the community and can be reviewed by admins.</p>
-              <div className="problem-list">
-                {problems.map((problem) => (
-                  <div className="problem-row" key={problem.id}><strong>{problem.title}</strong><p>{problem.description}</p><button className="community-danger-button" type="button" onClick={() => reportProblemItem(problem.id)}>Report this report</button></div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === "Messages" && (
-          <div className="community-grid">
-            <section className="community-panel">
-              <h2>Direct messages</h2>
-              <p>Choose a conversation or start a private message with another member.</p>
-              <div className="message-list">
-                {messages.map((item) => (
-                  <div className="message-row" key={item.id}><strong>{item.sender?.full_name || "Member"}</strong><p>{item.content}</p></div>
-                ))}
-              </div>
-              <form className="community-message-form" onSubmit={sendDirectMessage}>
-                <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message..." />
-                <button className="community-primary-button" type="submit">Send message</button>
-              </form>
-            </section>
-            <aside className="community-panel"><h2>Start a conversation</h2><p>Choose another member by their user ID to create a private thread.</p><form className="community-message-form" onSubmit={startConversation}><input value={participantId} onChange={(event) => setParticipantId(event.target.value)} placeholder="Participant user ID" required /><button className="community-secondary-button" type="submit">Start conversation</button></form></aside>
-          </div>
-        )}
       </div>
     </main>
   );

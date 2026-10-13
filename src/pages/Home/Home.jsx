@@ -4,17 +4,25 @@ import { Link } from "react-router-dom";
 import { LeafIcon } from "../../components/SankalpoIcons";
 import { useAuth } from "../../context/AuthContext";
 import { useVerifiedImpact } from "../../hooks/useVerifiedImpact";
+import { loadUserChallengeSubmissionStatuses } from "../../lib/challengeService";
 import { formatImpactNumber } from "../../lib/impact";
 import { supabase } from "../../lib/supabase";
 import "./Home.css";
 
 export default function Home() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { impact, loading: impactLoading } = useVerifiedImpact();
   const [challenge, setChallenge] = useState(null);
+  const [challengeSubmissionStatus, setChallengeSubmissionStatus] = useState(null);
+  const [challengeStatusLoading, setChallengeStatusLoading] = useState(true);
+  const [challengeStatusError, setChallengeStatusError] = useState("");
 
   useEffect(() => {
+    let active = true;
+
     async function loadChallenge() {
+      setChallengeStatusLoading(Boolean(user));
+      setChallengeStatusError("");
       const { data, error } = await supabase
         .from("challenges")
         .select("*")
@@ -24,12 +32,33 @@ export default function Home() {
         .maybeSingle();
 
       if (!error) {
-        setChallenge(data);
+        if (active) setChallenge(data);
+        if (data && user) {
+          try {
+            const statuses = await loadUserChallengeSubmissionStatuses(user.id, [data.id]);
+            if (active) setChallengeSubmissionStatus(statuses[data.id] || null);
+          } catch (statusError) {
+            if (active) {
+              setChallengeStatusError(
+                statusError.message || "Unable to check your challenge status."
+              );
+            }
+          }
+        } else if (active) {
+          setChallengeSubmissionStatus(null);
+        }
+      } else if (active) {
+        setChallenge(null);
       }
+
+      if (active) setChallengeStatusLoading(false);
     }
 
-    loadChallenge();
-  }, []);
+    void loadChallenge();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const displayName =
     profile?.full_name ||
@@ -72,9 +101,19 @@ export default function Home() {
 
             <div className="mission-actions">
               {challenge ? (
-                <Link className="primary-button" to={`/challenge/${challenge.id}`}>
-                  Take the challenge
-                </Link>
+                challengeStatusLoading ? (
+                  <span className="mission-status">Checking submission status...</span>
+                ) : challengeStatusError ? (
+                  <span className="mission-status" role="alert">Submission status unavailable</span>
+                ) : challengeSubmissionStatus === "pending" ? (
+                  <span className="mission-status" role="status">Submission pending verification</span>
+                ) : challengeSubmissionStatus === "approved" ? (
+                  <span className="mission-status" role="status">You have completed this challenge</span>
+                ) : (
+                  <Link className="primary-button" to={`/challenge/${challenge.id}`}>
+                    {challengeSubmissionStatus === "rejected" ? "Submit again" : "Take the challenge"}
+                  </Link>
+                )
               ) : (
                 <Link className="primary-button" to="/challenges">
                   View challenges
@@ -89,15 +128,15 @@ export default function Home() {
             <h2>Community progress, not self-reports.</h2>
             <div className="impact-list">
               <div>
-                <strong>{impactLoading ? "—" : formatImpactNumber(impact.actions)}</strong>
+                <strong>{impactLoading ? "—" : impact.actions === 0 ? "" : formatImpactNumber(impact.actions)}</strong>
                 <span>Approved actions</span>
               </div>
               <div>
-                <strong>{impactLoading ? "—" : formatImpactNumber(impact.trees)}</strong>
+                <strong>{impactLoading ? "—" : impact.trees === 0 ? "" : formatImpactNumber(impact.trees)}</strong>
                 <span>Verified trees</span>
               </div>
               <div>
-                <strong>{impactLoading ? "—" : formatImpactNumber(impact.wasteKg)}</strong>
+                <strong>{impactLoading ? "—" : impact.wasteKg === 0 ? "" : formatImpactNumber(impact.wasteKg)}</strong>
                 <span>kg verified waste</span>
               </div>
             </div>

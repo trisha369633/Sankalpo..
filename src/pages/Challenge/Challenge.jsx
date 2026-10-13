@@ -11,6 +11,7 @@ import {
 } from "../../components/SankalpoIcons";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
+import { loadUserChallengeSubmissionStatuses } from "../../lib/challengeService";
 import "./Challenge.css";
 
 export default function Challenge() {
@@ -19,6 +20,9 @@ export default function Challenge() {
 
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submissionStatus, setSubmissionStatus] = useState(null);
+  const [submissionStatusLoading, setSubmissionStatusLoading] = useState(true);
+  const [submissionStatusError, setSubmissionStatusError] = useState("");
 
   const [showForm, setShowForm] = useState(false);
 
@@ -34,33 +38,55 @@ export default function Challenge() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
+
     async function loadChallenge() {
       setLoading(true);
       setError("");
+      setSubmissionStatus(null);
+      setSubmissionStatusError("");
+      setSubmissionStatusLoading(Boolean(user));
 
-      const { data, error } = await supabase
-        .from("challenges")
-        .select(`
-          *,
-          instructions,
-          proof_requirements,
-          important_notes
-        `)
-        .eq("id", id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("challenges")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-      if (error) {
-        console.error("Challenge loading error:", error);
-        setError(error.message);
-      } else {
-        setChallenge(data);
+        if (error) throw error;
+        if (active) setChallenge(data);
+      } catch (error) {
+        if (active) {
+          console.error("Challenge loading error:", error);
+          setError(error.message || "Unable to load this challenge.");
+        }
       }
 
-      setLoading(false);
+      if (user) {
+        try {
+          const statuses = await loadUserChallengeSubmissionStatuses(user.id, [id]);
+          if (active) setSubmissionStatus(statuses[id] || null);
+        } catch (error) {
+          if (active) {
+            setSubmissionStatusError(
+              error.message || "Unable to check your submission status. Refresh and try again."
+            );
+          }
+        }
+      }
+
+      if (active) {
+        setLoading(false);
+        setSubmissionStatusLoading(false);
+      }
     }
 
-    loadChallenge();
-  }, [id]);
+    void loadChallenge();
+    return () => {
+      active = false;
+    };
+  }, [id, user]);
 
   // ================================
   // GET CURRENT LOCATION
@@ -145,6 +171,20 @@ export default function Challenge() {
 
     setError("");
     setMessage("");
+
+    if (submissionStatusLoading || submissionStatusError) {
+      setError("Unable to verify your existing submission. Refresh and try again.");
+      return;
+    }
+
+    if (submissionStatus === "pending" || submissionStatus === "approved") {
+      setError(
+        submissionStatus === "pending"
+          ? "Your submission is pending verification."
+          : "You have already completed this challenge."
+      );
+      return;
+    }
 
     // Check login
     if (!user) {
@@ -347,6 +387,7 @@ export default function Challenge() {
       setDescription("");
       setLocation(null);
       setShowForm(false);
+      setSubmissionStatus("pending");
 
       setMessage(
         "Your proof has been submitted successfully! It is now waiting for admin review."
@@ -535,25 +576,39 @@ export default function Challenge() {
           </div>
         )}
 
+        {!showForm && !message && submissionStatusError && (
+          <div className="challenge-error" role="alert">
+            <span>!</span>
+            <p>{submissionStatusError}</p>
+          </div>
+        )}
+
+        {(submissionStatus === "pending" || submissionStatus === "approved") && !showForm && !message && (
+          <div className="challenge-status-banner" role="status">
+            {submissionStatus === "pending"
+              ? "Submission pending verification"
+              : "You have already completed this challenge"}
+          </div>
+        )}
+
         {/* Start section */}
-        {!showForm && !message && (
+        {!showForm && !message && !submissionStatusLoading && !submissionStatusError &&
+          submissionStatus !== "pending" && submissionStatus !== "approved" && (
           <section className="submission-intro">
 
             <div>
               <p className="section-label">
-                READY TO MAKE AN IMPACT?
+                {submissionStatus === "rejected" ? "PREVIOUS SUBMISSION REJECTED" : "READY TO MAKE AN IMPACT?"}
               </p>
 
               <h2>
-                Complete the challenge
+                {submissionStatus === "rejected" ? "Submit again" : "Complete the challenge"}
               </h2>
 
               <p>
-                Take a photo of your completed
-                environmental action, share your
-                current location, and tell us what
-                you did. Your submission will be
-                reviewed by the Sankalpo team.
+                {submissionStatus === "rejected"
+                  ? "Update your proof and submit again for admin review."
+                  : "Take a photo of your completed environmental action, share your current location, and tell us what you did. Your submission will be reviewed by the Sankalpo team."}
               </p>
             </div>
 
@@ -566,7 +621,7 @@ export default function Challenge() {
                 setMessage("");
               }}
             >
-              Start Challenge →
+              {submissionStatus === "rejected" ? "Submit Again →" : "Start Challenge →"}
             </button>
 
           </section>

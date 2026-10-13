@@ -27,15 +27,15 @@ export default function Landing() {
 
         <div className="verified-impact-strip" aria-live="polite">
           <div>
-            <strong>{loading ? "—" : formatImpactNumber(impact.actions)}</strong>
+            <strong>{loading ? "—" : impact.actions === 0 ? "" : formatImpactNumber(impact.actions)}</strong>
             <span>verified actions</span>
           </div>
           <div>
-            <strong>{loading ? "—" : formatImpactNumber(impact.trees)}</strong>
+            <strong>{loading ? "—" : impact.trees === 0 ? "" : formatImpactNumber(impact.trees)}</strong>
             <span>trees funded</span>
           </div>
           <div>
-            <strong>{loading ? "—" : formatImpactNumber(impact.wasteKg)}</strong>
+            <strong>{loading ? "—" : impact.wasteKg === 0 ? "" : formatImpactNumber(impact.wasteKg)}</strong>
             <span>kg waste verified</span>
           </div>
         </div>

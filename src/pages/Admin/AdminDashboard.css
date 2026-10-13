@@ -59,6 +59,14 @@
   color: #9a3131;
 }
 
+.admin-notice {
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  border: 1px solid #c9e2d3;
+  border-radius: 14px;
+  background: #ebf7ef;
+  color: #2f684b;
+}
 
 /* =========================================
    STATS
@@ -92,6 +100,35 @@
   color: #245b35;
   font-size: 34px;
   line-height: 1;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+  padding: 5px;
+  border: 1px solid #dce5d9;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-tabs button {
+  flex: 1;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #607060;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.admin-tabs button.active {
+  background: #285f38;
+  color: #fff;
 }
 
 
@@ -483,6 +520,19 @@
   padding-top: 6px;
 }
 
+.cancel-challenge-button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #d0dacf;
+  border-radius: 11px;
+  background: #fff;
+  color: #506050;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
 .challenge-editor-actions label {
   width: 190px;
 }
@@ -500,6 +550,106 @@
   cursor: pointer;
 }
 
+.published-challenges-section .admin-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.published-count {
+  color: #617061;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.published-challenge-list {
+  display: grid;
+  gap: 12px;
+}
+
+.published-challenge-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 20px;
+  border: 1px solid #dce5d9;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.published-challenge-content {
+  min-width: 0;
+}
+
+.published-challenge-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.published-challenge-heading h3 {
+  margin: 0;
+  color: #263429;
+  font-size: 18px;
+}
+
+.published-challenge-content > p {
+  margin: 8px 0 0;
+  color: #657266;
+  line-height: 1.5;
+}
+
+.published-challenge-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+  color: #718071;
+  font-size: 11px;
+}
+
+.duplicate-challenge-badge {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fff0d9;
+  color: #805915;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.published-challenge-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.published-challenge-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #cdd9ca;
+  border-radius: 9px;
+  background: #f4f8f2;
+  color: #315d3a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.published-challenge-actions .delete-challenge-button {
+  border-color: #e4caca;
+  background: #fff5f5;
+  color: #8e3d3d;
+}
+
+.published-challenge-actions button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
 @media (max-width: 700px) {
   .challenge-editor-grid,
   .challenge-editor-row {
@@ -512,6 +662,20 @@
   }
 
   .challenge-editor-actions label {
+    width: 100%;
+  }
+
+  .admin-tabs {
+    flex-direction: column;
+  }
+
+  .published-challenge-card,
+  .published-challenge-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .published-challenge-actions {
     width: 100%;
   }
 }

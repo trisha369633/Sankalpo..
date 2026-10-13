@@ -14,17 +14,14 @@ const navigation = [
 ];
 
 export default function Header() {
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = Boolean(user && profile?.role === "admin");
 
   const links = [
     ...navigation,
-    ...(isAdmin ? [
-      { label: "Admin", to: "/admin" },
-      { label: "Moderation", to: "/admin/community" },
-    ] : []),
+    ...(isAdmin ? [{ label: "Admin", to: "/admin" }] : []),
     { label: "Profile", to: "/profile" },
   ];
 

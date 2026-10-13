@@ -200,6 +200,16 @@
   color: #fff;
 }
 
+.challenge-status-message {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  color: #506b55;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .details-toggle {
   border: 1px solid #d4dfd2;
   background: #fff;
@@ -274,6 +284,7 @@
   }
 
   .take-challenge-button,
+  .challenge-status-message,
   .details-toggle {
     width: 100%;
   }

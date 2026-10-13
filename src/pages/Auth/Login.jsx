@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LeafIcon } from "../../components/SankalpoIcons";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { user, profile, profileError, loading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,25 +14,29 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!user || authLoading) return;
+    navigate(profile?.role === "admin" ? "/admin" : "/dashboard", { replace: true });
+  }, [user, profile, authLoading, navigate]);
+
   async function handleSubmit(event) {
     event.preventDefault();
 
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
+      if (signInError) setError(signInError.message);
+    } catch (signInError) {
+      setError(signInError?.message || "Unable to sign in. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    navigate("/home");
   }
 
   return (
@@ -54,6 +60,8 @@ export default function Login() {
             type="email"
             placeholder="you@example.com"
             value={email}
+            autoComplete="email"
+            required
             onChange={(event) => setEmail(event.target.value)}
           />
 
@@ -63,10 +71,16 @@ export default function Login() {
             type="password"
             placeholder="Your password"
             value={password}
+            autoComplete="current-password"
+            required
             onChange={(event) => setPassword(event.target.value)}
           />
 
-          {error && <p className="auth-error">{error}</p>}
+          {(error || (user && profileError)) && (
+            <p className="auth-error">
+              {error || `Signed in, but your profile could not be loaded: ${profileError}`}
+            </p>
+          )}
 
           <button type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Login"}

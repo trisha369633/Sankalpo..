@@ -170,6 +170,17 @@
   line-height: 1.5;
 }
 
+.challenge-status-banner {
+  margin-top: 24px;
+  padding: 17px 20px;
+  border: 1px solid #d3e2d3;
+  border-radius: 16px;
+  background: #f2f7f1;
+  color: #315d3a;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 
 /* ================================
    START SECTION

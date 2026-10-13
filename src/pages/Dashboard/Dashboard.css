@@ -144,7 +144,7 @@
 
 .submission-status-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   max-width: 420px;
 }
@@ -264,6 +264,14 @@
   color: #9b4545;
 }
 
+.submission-status.status-pending {
+  color: #8a691d;
+}
+
+.submission-card.status-pending {
+  border-color: #e6d8b6;
+}
+
 .submission-card-topline time {
   color: #7e8a7e;
   font-size: 9px;
@@ -285,7 +293,8 @@
 }
 
 .approved-summary,
-.rejected-summary {
+.rejected-summary,
+.pending-summary {
   margin-top: 13px;
 }
 
@@ -302,7 +311,8 @@
 }
 
 .approved-summary p,
-.rejected-summary p {
+.rejected-summary p,
+.pending-summary p {
   margin: 8px 0 0;
   color: #687568;
   font-size: 11px;

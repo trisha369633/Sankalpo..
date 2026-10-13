@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { Clock3 } from "lucide-react";
 
 import {
   ActionsIcon,
@@ -15,6 +16,7 @@ import { supabase } from "../../lib/supabase";
 import "./Dashboard.css";
 
 const submissionFilters = [
+  { id: "pending", label: "Pending" },
   { id: "approved", label: "Approved" },
   { id: "rejected", label: "Rejected" },
 ];
@@ -197,7 +199,9 @@ export default function Dashboard() {
                   <span className="filter-symbol" aria-hidden="true">
                     {filter.id === "approved"
                       ? <ApprovedIcon size={15} strokeWidth={2} />
-                      : <RejectedIcon size={15} strokeWidth={2} />}
+                      : filter.id === "rejected"
+                      ? <RejectedIcon size={15} strokeWidth={2} />
+                      : <Clock3 size={15} strokeWidth={2} />}
                   </span>
                   <span>{filter.label}</span>
                   <small>{count}</small>
@@ -291,10 +295,12 @@ function SubmissionCard({ submission }) {
     <article className={`submission-card status-${status}`}>
       <div className="submission-card-topline">
         <span className={`submission-status status-${status}`}>
-          {status === "approved"
-            ? <ApprovedIcon size={15} strokeWidth={2} />
-            : <RejectedIcon size={15} strokeWidth={2} />}
-          {status === "approved" ? "Approved" : "Rejected"}
+            {status === "approved"
+              ? <ApprovedIcon size={15} strokeWidth={2} />
+              : status === "rejected"
+              ? <RejectedIcon size={15} strokeWidth={2} />
+              : <Clock3 size={15} strokeWidth={2} />}
+            {status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Pending"}
         </span>
         <time dateTime={submission.created_at}>{submittedDate}</time>
       </div>
@@ -307,13 +313,17 @@ function SubmissionCard({ submission }) {
             <span>+{submission.challenges?.reward ?? 0} Eco-Coins</span>
             <p>Verified environmental action</p>
           </div>
-        ) : (
+        ) : status === "rejected" ? (
           <div className="rejected-summary">
             <div className="feedback-label">Admin feedback</div>
             <p>{submission.admin_note || "No rejection reason was provided."}</p>
             <Link to={`/challenge/${submission.challenge_id}`}>
               Submit Again
             </Link>
+          </div>
+        ) : (
+          <div className="pending-summary">
+            <p>Submission pending verification</p>
           </div>
         )}
       </div>

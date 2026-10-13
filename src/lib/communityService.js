@@ -52,7 +52,7 @@ export async function loadCommunityPosts() {
 
   const commentList = commentResult.data || [];
   const profiles = await getProfiles([
-    ...postList.map((post) => post.author_id),
+    ...postList.map((post) => post.user_id),
     ...commentList.map((comment) => comment.author_id),
   ]);
 
@@ -72,7 +72,7 @@ export async function loadCommunityPosts() {
 
   return postList.map((post) => ({
     ...post,
-    author: profiles[post.author_id] || null,
+    author: profiles[post.user_id] || null,
     reactions: reactionsByPost.get(post.id) || [],
     comments: commentsByPost.get(post.id) || [],
   }));
@@ -85,7 +85,7 @@ export async function createCommunityPost({ content, postType, location, imageUr
   const { data, error } = await supabase
     .from("community_posts")
     .insert({
-      author_id: auth.user.id,
+      user_id: auth.user.id,
       title: content.trim().slice(0, 100),
       description: content.trim(),
       post_type: postType || "action",
@@ -93,7 +93,7 @@ export async function createCommunityPost({ content, postType, location, imageUr
       photo_url: imageUrl || null,
       verification_status: "pending",
     })
-    .select("id, author_id, title, description, post_type, location, photo_url, verification_status, created_at")
+    .select("id, user_id, title, description, post_type, location, photo_url, verification_status, created_at")
     .single();
   if (error) throw error;
   return data;
@@ -114,7 +114,7 @@ export async function updateCommunityPost(postId, updates) {
     .from("community_posts")
     .update(updateData)
     .eq("id", postId)
-    .eq("author_id", auth.user.id)
+    .eq("user_id", auth.user.id)
     .select("id, title, description, post_type, location, photo_url, updated_at")
     .single();
   if (error) throw error;
@@ -129,7 +129,7 @@ export async function deleteCommunityPost(postId) {
     .from("community_posts")
     .delete()
     .eq("id", postId)
-    .eq("author_id", auth.user.id);
+    .eq("user_id", auth.user.id);
   if (error) throw error;
   return true;
 }

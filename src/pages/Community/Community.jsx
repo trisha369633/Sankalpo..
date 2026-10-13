@@ -394,7 +394,7 @@ export default function Community() {
             ) : (
               <div className="community-feed-list">
                 {posts.map((post) => {
-                  const isOwner = post.author_id === user?.id;
+                  const isOwner = post.user_id === user?.id;
                   const reactionCount = post.reactions?.length || 0;
                   const postText = post.description || post.title;
                   const postImage = normalizeCommunityImageUrl(post.photo_url);

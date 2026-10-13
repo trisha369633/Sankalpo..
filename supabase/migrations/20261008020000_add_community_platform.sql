@@ -2,7 +2,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.community_posts (
   id uuid primary key default gen_random_uuid(),
-  author_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
   post_type text not null default 'action'
     check (post_type in ('action', 'problem', 'success', 'achievement')),
   title text not null,
@@ -141,19 +141,19 @@ alter table public.monthly_rewards enable row level security;
 create policy community_posts_select_public on public.community_posts
 for select using (verification_status = 'verified');
 create policy community_posts_select_own on public.community_posts
-for select using (auth.uid() = author_id);
+for select using (auth.uid() = user_id);
 create policy community_posts_select_admin on public.community_posts
 for select using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
 create policy community_posts_insert_own on public.community_posts
-for insert with check (auth.uid() = author_id);
+for insert with check (auth.uid() = user_id);
 create policy community_posts_update_own on public.community_posts
-for update using (auth.uid() = author_id)
-with check (auth.uid() = author_id);
+for update using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
 create policy community_posts_update_admin on public.community_posts
 for update using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'))
 with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
 create policy community_posts_delete_own on public.community_posts
-for delete using (auth.uid() = author_id);
+for delete using (auth.uid() = user_id);
 
 create policy environmental_problems_select_public on public.environmental_problems
 for select using (true);
